@@ -8,11 +8,6 @@ library(ggdark)
 library(dplyr)
 library(ggplot2)
 library(readr)
-#library(skimr)
-#library(knitr)
-#library(kableExtra) # for pretty printing tables
-#library(d3heatmap) # CORR heatmap
-#library(FactoMineR)
 library(glmnet)
 library(Boruta)
 library(rpart)
@@ -27,7 +22,7 @@ library(lubridate)
 ## Loading ABDEL+MIMOSA Dataset
 
 ```{r}
-data_caprino_ok<-readr::read_delim("data/oklahoma-data/seba-caprino-feature-enginering - Sebastian_Abdel_Final_Data_dist.tsv",col_types = cols(),delim='\t')
+data_caprino_ok<-readr::read_delim("../../../data/seba-caprino-feature-enginering - Sebastian_Abdel_Final_Data_dist.tsv",col_types = cols(),delim='\t')
 data_caprino_ok$Anim <- as.factor(data_caprino_ok$Anim)
 data_caprino_ok$collar <- as.factor(data_caprino_ok$collar)
 data_caprino_ok$Tag <- as.factor(data_caprino_ok$Tag)
@@ -51,17 +46,9 @@ names(data_caprino_ok)[17]<-"%HeadDown"
 
 ```{r}
 data_caprino_ok<- data_caprino_ok %>% filter(Activity!="OTHER")
-
 data_caprino_ok<- data_caprino_ok %>% filter(Anim!="505067")
-
-
-
 data_caprino_ok %>% group_by(Anim) %>% summarise(n=n()) %>% arrange(desc(n))
 ```
-
-
-
-
 
 ## Creating lags variables
 
@@ -115,7 +102,7 @@ data_caprino_ok <- data_caprino_ok %>% ungroup() %>% select(-lat,
                                                             )
 ```
 
-## Select only numeric features
+## Selecting only numeric features
 ```{r}
 data_caprino_ok_numeric<-data_caprino_ok %>% select(-'Date/Time',-Date,-epoch) %>% select_if(~class(.) == 'numeric')
 data_caprino_ok_numeric<-data_caprino_ok_numeric %>% tibble::add_column(Anim=data_caprino_ok$Anim)
@@ -144,7 +131,7 @@ names(data_caprino_ok_numeric) %>% as.data.frame()
 
 # FEATURE ENGINEERING
 
-## Creating new variables
+## Creating new variables according to several papers
 ```{r}
 data_caprino_ok_numeric <-
   data_caprino_ok_numeric %>% mutate(DiffXY = abs(X_Act - Y_Act))
@@ -192,16 +179,27 @@ data_caprino_ok_numeric <- data_caprino_ok_numeric %>% select(#-`distance(m)`,
                                                               )
 
 ```
-## BORUTA Feature Selection
+## BORUTA selecting Animals 
 ```{r}
-num_of_feat<-20
-data_caprino_ok_numeric_with_classes<- data_caprino_ok_numeric %>% select(-Anim)  %>% 
+data_caprino_ok_numeric %>% group_by(Anim) %>% summarise(n=n())
+train_dataset_boruta<- data_caprino_ok_numeric  %>% 
   tibble::add_column(Activity=as.factor(data_caprino_ok$Activity))
-val_dataset  <- data_caprino_ok_numeric_with_classes   %>% group_by(Activity) %>% sample_n(2) %>% ungroup()
-train_dataset <-dplyr::setdiff(data_caprino_ok_numeric_with_classes,val_dataset)
 
-var_importance_boruta<-Boruta(Activity ~ . ,data=train_dataset %>% na.omit())
+data_caprino_ok_numeric_w_classes<- train_dataset_boruta %>% filter(!(Anim %in% c(1553,1635,505081,505075) ))
+train_dataset_boruta<- train_dataset_boruta %>% filter(Anim %in% c(1553,1635,505081,505075) )  %>% select(-Anim)
+train_dataset_boruta %>% group_by(Activity) %>% summarise(n=n())
+data_caprino_ok_numeric_w_classes %>% group_by(Activity) %>% summarise(n=n())
+```
 
+
+## Using BORUTA for Feature Selection
+
+We use ~25% of the dataset for selecting features using BORUTA algorithm. 
+Four animals were removed.
+
+```{r}
+num_of_feat<-10
+var_importance_boruta<-Boruta(Activity ~ . ,data=train_dataset_boruta %>% na.omit())
 var_importance_boruta<-attStats(var_importance_boruta) %>% filter(decision=='Confirmed') %>% select(meanImp) %>% arrange(desc(meanImp)) %>% top_n(num_of_feat)
 var_importance_boruta<-var_importance_boruta %>% tibble::rownames_to_column('variable')
 var_importance_boruta_final<-apply(var_importance_boruta$variable %>% t() ,2, function(x) stringr::str_replace_all(x, pattern="`",replacement = "")) %>% as.data.frame()
@@ -229,32 +227,23 @@ metrics <- function(cm,preds,testset) {
 
 ```
 
-
-
-
-## Control and Resampling setup
-
-
-## Creating training and testing datasets
-
-### Create LOOCV samples
+## Create LOOCV samples
 ```{r}
-loocv_sample_train <- vector(mode = "list", length = length( data_caprino_ok_numeric$Anim %>% unique()))
-loocv_sample_test <- vector(mode = "list", length = length( data_caprino_ok_numeric$Anim %>% unique()))
 
-n_anim<-data_caprino_ok_numeric$Anim %>% unique()
+#data_caprino_ok_numeric <- data_caprino_ok_numeric %>%  filter( !(Anim %in% c(1553,1635,505081,505075) ))
+loocv_sample_train <- vector(mode = "list", length = length( data_caprino_ok_numeric_w_classes$Anim %>% unique()))
+loocv_sample_test <- vector(mode = "list", length = length( data_caprino_ok_numeric_w_classes$Anim %>% unique()))
+
+n_anim<-data_caprino_ok_numeric_w_classes$Anim %>% unique()
 
 for(i in seq_along(n_anim) ) {
   print(i)
-  loocv_sample_train[[i]] <- which(data_caprino_ok_numeric$Anim != n_anim[i])
-  loocv_sample_test[[i]] <- which(data_caprino_ok_numeric$Anim == n_anim[i])
+  loocv_sample_train[[i]] <- which(data_caprino_ok_numeric_w_classes$Anim != n_anim[i])
+  loocv_sample_test[[i]] <- which(data_caprino_ok_numeric_w_classes$Anim == n_anim[i])
 }
-
-
-
 ```
 
-
+## Control and Resampling setup
 ```{r}
 ctrl_fast <- trainControl(
   method = "cv",
@@ -268,16 +257,14 @@ ctrl_fast <- trainControl(
 )
 ```
 
-## Boost Cross Validation
-
-
-
+## Boost LOOCV
 
 ```{r message=FALSE}
 library(caret)
 library(doMC)
 registerDoMC(cores = 8)
-caret_dataset <-  cbind(data_caprino_ok_numeric,Activity=data_caprino_ok$Activity)
+#caret_dataset <-  cbind(data_caprino_ok_numeric,Activity=data_caprino_ok$Activity)
+caret_dataset <-  data_caprino_ok_numeric_w_classes
 
 loocv_results<- vector(mode = "list", length = length( n_anim))
 
@@ -355,7 +342,12 @@ for (i in seq(1, length(n_anim))) {
         model = boostFit
       )
 }
-overall<-lapply(loocv_results,function(x) x$overall %>% t() %>% as.data.frame() %>% select(Accuracy)) %>% unlist() %>% t() 
+```
+# RESULTS
+```{r}
+overall<-lapply(loocv_results,function(x) x$overall %>% t() %>% 
+                  as.data.frame() %>% 
+                  select(Accuracy)) %>% unlist() %>% t() 
 overall  %>% mean()
 overall  %>% sd()
 
