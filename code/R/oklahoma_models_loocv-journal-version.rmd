@@ -1,0 +1,373 @@
+---
+title: "OKLAHOMA models (leave-one-out) Journal Version"
+output: html_notebook
+---
+```{r}
+#library(ggalluvial)
+library(ggdark)
+library(dplyr)
+library(ggplot2)
+library(readr)
+#library(skimr)
+#library(knitr)
+#library(kableExtra) # for pretty printing tables
+#library(d3heatmap) # CORR heatmap
+#library(FactoMineR)
+library(glmnet)
+library(Boruta)
+library(rpart)
+library(randomForest)
+library(rpart.plot)
+library(caret)
+library(catboost)
+library(lubridate)
+```
+# DATA PREPARATION
+
+## Loading ABDEL+MIMOSA Dataset
+
+```{r}
+data_caprino_ok<-readr::read_delim("data/oklahoma-data/seba-caprino-feature-enginering - Sebastian_Abdel_Final_Data_dist.tsv",col_types = cols(),delim='\t')
+data_caprino_ok$Anim <- as.factor(data_caprino_ok$Anim)
+data_caprino_ok$collar <- as.factor(data_caprino_ok$collar)
+data_caprino_ok$Tag <- as.factor(data_caprino_ok$Tag)
+data_caprino_ok <- data_caprino_ok %>% na.omit()
+data_caprino_ok %>% names()
+names(data_caprino_ok)[14]<-"distance(m)"
+names(data_caprino_ok)[17]<-"%HeadDown"
+
+
+```
+
+####  (RL and RS) vs the rest of the classes
+```{r}
+  data_caprino_ok<-data_caprino_ok %>% 
+  mutate(Activity=ifelse(Activity %in% c("RS","RL"),"R",Activity))
+```
+
+## Removing problematic registers
+- Activity labeled as OTHER
+- Animals with very few activities
+
+```{r}
+data_caprino_ok<- data_caprino_ok %>% filter(Activity!="OTHER")
+
+data_caprino_ok<- data_caprino_ok %>% filter(Anim!="505067")
+
+
+
+data_caprino_ok %>% group_by(Anim) %>% summarise(n=n()) %>% arrange(desc(n))
+```
+
+
+
+
+
+## Creating lags variables
+
+```{r}
+act_timeseries<-data_caprino_ok  %>% 
+  mutate(epoch= paste(Date,`Date/Time`) %>% mdy_hms())
+
+act_timeseries <-
+    act_timeseries %>% mutate(day = cut(
+    as.POSIXct(act_timeseries$epoch, origin = "1950-01-01", tz = "GMT"),
+    breaks = "1 day"
+    )
+  )
+
+data_caprino_ok<-act_timeseries %>% arrange(epoch) %>% group_by(Anim) %>% 
+  mutate(
+      prev_Active1=lag(Active, order_by=Anim,n=1, default=0),
+      prev_Active2=lag(Active, order_by=Anim,n = 2, default=0 ),
+      #prev_Active3=lag(Active, order_by=Anim,n = 3, default=0 )
+      ) %>% 
+   mutate(
+      prev_Standing1=lag(Standing, order_by=Anim,n=1, default=0),
+      prev_Standing2=lag(Standing, order_by=Anim,n = 2, default=0 ),
+      #prev_Standing3=lag(Standing, order_by=Anim,n = 3, default=0 )
+      ) %>%
+   mutate(
+      prev_Lying1=lag(Lying, order_by=Anim,n=1, default=0),
+      prev_Lying2=lag(Lying, order_by=Anim,n = 2, default=0 ),
+      #prev_Lying3=lag(Lying, order_by=Anim,n = 3, default=0 )
+      ) %>%
+     mutate(
+      prev_steps1=lag(Steps, order_by=Anim,n=1, default=0),
+      prev_steps2=lag(Steps, order_by=Anim,n = 2, default=0 ),
+      #prev_steps3=lag(Steps, order_by=Anim,n = 3, default=0 )
+      )
+```
+
+
+## Removing useless variables according to expertise
+
+```{r}
+data_caprino_ok <- data_caprino_ok %>% ungroup() %>% select(-lat,
+                                                                            -long,
+                                                                           # -Anim,
+                                                                            -Diffxy,
+                                                                            -Meanxy,
+                                                                            -Varxy,
+                                                                            -logdistance,
+                                                                            -SMA
+                                                                            #,-DOP
+                                                            )
+```
+
+## Select only numeric features
+```{r}
+data_caprino_ok_numeric<-data_caprino_ok %>% select(-'Date/Time',-Date,-epoch) %>% select_if(~class(.) == 'numeric')
+data_caprino_ok_numeric<-data_caprino_ok_numeric %>% tibble::add_column(Anim=data_caprino_ok$Anim)
+
+data_caprino_ok_numeric <- data_caprino_ok_numeric #%>% select(
+#  -"distance(m)",
+#  -Steps,
+#  -X_Act,
+#  -Y_Act,
+#  -DFL1,
+#  -DFL2,
+#  -DFL3,
+#  -DFA12,
+#  -DFA123,
+#  -DBL1,
+#  -DBL2,
+#  -DBL3,
+#  -DBA12,
+#  -DBA123,
+#   -DOP
+ # -tag_activity,
+#)
+names(data_caprino_ok_numeric) %>% as.data.frame()
+```
+
+
+# FEATURE ENGINEERING
+
+## Creating new variables
+```{r}
+data_caprino_ok_numeric <-
+  data_caprino_ok_numeric %>% mutate(DiffXY = abs(X_Act - Y_Act))
+data_caprino_ok_numeric <-
+  data_caprino_ok_numeric %>% rowwise() %>% mutate(MeanXY = mean(c(X_Act, Y_Act)))
+data_caprino_ok_numeric <-
+  data_caprino_ok_numeric %>% rowwise() %>% mutate(VarXY = sd(c(X_Act, Y_Act)))
+
+# Scale distance and steps
+range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+data_caprino_ok_numeric %>% mutate(Steps=range01(Steps),`distance(m)`=range01(`distance(m)`))
+
+data_caprino_ok_numeric <- data_caprino_ok_numeric %>%  mutate(
+  X_Actlog = log10(X_Act + 1e-10),
+  Y_Actlog = log10(Y_Act + 1e-10),
+  Stepslog = log10(Steps + 1e-10),
+ `distance(m)log` = log10(`distance(m)` + 1e-10),
+  VarXYlog = log10(VarXY + 1e-10),
+  DiffXYlog = log10(DiffXY + 1e-10),
+  MeanXYlog = log10(MeanXY + 1e-10),
+  DOPlog = log10(DOP + 1e-10)
+)
+
+#data_caprino_ok_numeric$tag_activity<-data_caprino_ok_numeric %>% select(Active,Lying,Standing) %>% apply( MARGIN=1, FUN=which.max)# %>% as.factor()
+data_caprino_ok_numeric<-data_caprino_ok_numeric %>% ungroup()
+
+names(data_caprino_ok_numeric) %>% as.data.frame()
+
+data_caprino_ok_numeric <- data_caprino_ok_numeric %>% select(#-`distance(m)`,
+                                                              -`distance(m)log`,
+                                                              #-Stepslog,
+                                                              -Steps,
+                                                              -X_Act,
+                                                              -Y_Act,
+                                                              #-Active,
+                                                              #-Lying,
+                                                              #-Standing,
+                                                            
+                                                              -VarXY,
+                                                              -DiffXY,
+                                                              -MeanXY,
+                                                              #-tag_activity,
+                                                            
+                                                              #-DOP
+                                                              )
+
+```
+## BORUTA Feature Selection
+```{r}
+num_of_feat<-20
+data_caprino_ok_numeric_with_classes<- data_caprino_ok_numeric %>% select(-Anim)  %>% 
+  tibble::add_column(Activity=as.factor(data_caprino_ok$Activity))
+val_dataset  <- data_caprino_ok_numeric_with_classes   %>% group_by(Activity) %>% sample_n(2) %>% ungroup()
+train_dataset <-dplyr::setdiff(data_caprino_ok_numeric_with_classes,val_dataset)
+
+var_importance_boruta<-Boruta(Activity ~ . ,data=train_dataset %>% na.omit())
+
+var_importance_boruta<-attStats(var_importance_boruta) %>% filter(decision=='Confirmed') %>% select(meanImp) %>% arrange(desc(meanImp)) %>% top_n(num_of_feat)
+var_importance_boruta<-var_importance_boruta %>% tibble::rownames_to_column('variable')
+var_importance_boruta_final<-apply(var_importance_boruta$variable %>% t() ,2, function(x) stringr::str_replace_all(x, pattern="`",replacement = "")) %>% as.data.frame()
+names(var_importance_boruta_final)<-"variable"
+var_importance_boruta
+```
+
+# MODELS
+## Macro and Micro metrics
+
+```{r}
+
+metrics <- function(cm,preds,testset) {
+  macro_metrics <- (apply(cm$byClass, 2, sum) / 4) [c(5, 6, 7)]
+  s = table(preds, as.factor(testset$Activity))
+  Precision_micro <-  (sum(diag(s)) / sum(apply(s, 1, sum)))
+  Recall_micro <- (sum(diag(s)) / sum(apply(s, 2, sum)))
+  micro_metrics <- c((sum(diag(s)) / sum(apply(s, 1, sum))),
+                     (sum(diag(s)) / sum(apply(s, 2, sum))),
+                     2 * ((Precision_micro * Recall_micro) / (Precision_micro + Recall_micro)
+                     ))
+  mm <- cbind(c(macro_metrics), c(micro_metrics))
+  data.frame(macro = mm[, 1], micro = mm[, 2])
+}
+
+```
+
+
+
+
+## Control and Resampling setup
+
+
+## Creating training and testing datasets
+
+### Create LOOCV samples
+```{r}
+loocv_sample_train <- vector(mode = "list", length = length( data_caprino_ok_numeric$Anim %>% unique()))
+loocv_sample_test <- vector(mode = "list", length = length( data_caprino_ok_numeric$Anim %>% unique()))
+
+n_anim<-data_caprino_ok_numeric$Anim %>% unique()
+
+for(i in seq_along(n_anim) ) {
+  print(i)
+  loocv_sample_train[[i]] <- which(data_caprino_ok_numeric$Anim != n_anim[i])
+  loocv_sample_test[[i]] <- which(data_caprino_ok_numeric$Anim == n_anim[i])
+}
+
+
+
+```
+
+
+```{r}
+ctrl_fast <- trainControl(
+  method = "cv",
+  number = 10,
+  returnResamp = 'final',
+  savePredictions = 'final',
+  verboseIter = FALSE,
+  classProbs = TRUE,
+  allowParallel = TRUE,
+  summaryFunction=multiClassSummary
+)
+```
+
+## Boost Cross Validation
+
+
+
+
+```{r message=FALSE}
+library(caret)
+library(doMC)
+registerDoMC(cores = 8)
+caret_dataset <-  cbind(data_caprino_ok_numeric,Activity=data_caprino_ok$Activity)
+
+loocv_results<- vector(mode = "list", length = length( n_anim))
+
+for (i in seq(1, length(n_anim))) {
+  train_dataset_loocv <- caret_dataset[loocv_sample_train[[i]], ]
+  train_dataset_loocv$Activity <-
+    as.factor(train_dataset_loocv$Activity)
+  test_dataset_loocv <- caret_dataset[-loocv_sample_train[[i]], ]
+  test_dataset_loocv$Activity <-
+    factor(test_dataset_loocv$Activity,
+           levels = levels(train_dataset_loocv$Activity))
+  #print(train_dataset[-loocv_sample[[i]],] %>% group_by(Activity) %>% summarise(n=n()))
+  
+  
+  boost_val_dataset <- train_dataset_loocv %>% sample_frac(.1)
+  trainset_dataset <- setdiff(train_dataset_loocv, boost_val_dataset)
+  
+  selected_variables <- var_importance_boruta_final #%>% filter(variable!="MeanXYlog") %>% 
+  #filter(variable!="DFA123") %>%
+  #filter(variable!="DBA123") %>%
+  #filter(variable!="DFA12") %>%
+  #filter(variable!="DBL2") %>%
+  #filter(variable!="X_Actlog")
+  
+  grid <- expand.grid(
+    depth = c(4),
+    learning_rate = c(0.05),
+    #iterations = c(10,50,100,500,1000),
+    iterations = c(1000),
+    l2_leaf_reg = c(3.0),
+    #regularization parameter
+    rsm = c(1),
+    # percentage of features to use at each split selection
+    border_count = c(64)
+  )
+  
+  boostFit <- caret::train(
+    x = train_dataset_loocv %>%
+      select(selected_variables$variable) %>%  na.omit() %>% as.data.frame(),
+    y = train_dataset_loocv %>%  select(Activity) %>% unlist() %>% unname()  %>% as.factor(),
+    method = catboost::catboost.caret,
+    #tuneLength=5,
+    tuneGrid = grid,
+    metric = 'logLoss',
+    #preProcess = c("center","scale"),
+    verbose = 0,
+    trControl = ctrl_fast,
+    auto_class_weights = "Balanced",
+    #class_weights= py$class_weight,
+    use_best_model = TRUE,
+    od_type = 'Iter',
+    test_pool = catboost.load_pool(
+      boost_val_dataset %>%
+        select(selected_variables$variable) %>%  na.omit() %>% as.data.frame(),
+      label = as.numeric(as.factor(boost_val_dataset$Activity)) -
+        1
+    )
+  )
+  boostFit
+  boostFit$finalModel
+  
+  ## Independent Evaluation
+  boostFit_eval <- predict(boostFit,
+                           test_dataset_loocv  %>%
+                             select(selected_variables$variable))
+  cm <-
+    confusionMatrix(reference = as.factor(test_dataset_loocv$Activity), boostFit_eval)
+  metrics(cm, boostFit_eval, test_dataset_loocv)
+  
+  loocv_results[[i]] <- list(
+        overall = cm$overall,
+        byclass = cm$byClass,
+        tab = cm$table,
+        predictions = boostFit_eval,
+        model = boostFit
+      )
+}
+overall<-lapply(loocv_results,function(x) x$overall %>% t() %>% as.data.frame() %>% select(Accuracy)) %>% unlist() %>% t() 
+overall  %>% mean()
+overall  %>% sd()
+
+byclass <- lapply(loocv_results, function(x)
+  x$byclass)
+
+rownames <- do.call(rbind, byclass)   %>% rownames()
+
+do.call(rbind, byclass) %>% as.data.frame() %>% 
+  tibble::add_column(class =rownames) %>% 
+  group_by(class) %>% 
+  summarise(mean = mean(Recall, na.rm =TRUE), sd=sd(Recall, na.rm=TRUE)
+            )
+
+```
