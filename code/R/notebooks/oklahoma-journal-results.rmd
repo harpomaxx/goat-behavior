@@ -67,22 +67,22 @@ data_caprino_ok<-act_timeseries %>% arrange(epoch) %>% group_by(Anim) %>%
   mutate(
       prev_Active1=lag(Active, order_by=Anim,n=1, default=0),
       prev_Active2=lag(Active, order_by=Anim,n = 2, default=0 ),
-      #prev_Active3=lag(Active, order_by=Anim,n = 3, default=0 )
+      prev_Active3=lag(Active, order_by=Anim,n = 3, default=0 )
       ) %>% 
    mutate(
       prev_Standing1=lag(Standing, order_by=Anim,n=1, default=0),
       prev_Standing2=lag(Standing, order_by=Anim,n = 2, default=0 ),
-      #prev_Standing3=lag(Standing, order_by=Anim,n = 3, default=0 )
+      prev_Standing3=lag(Standing, order_by=Anim,n = 3, default=0 )
       ) %>%
    mutate(
       prev_Lying1=lag(Lying, order_by=Anim,n=1, default=0),
       prev_Lying2=lag(Lying, order_by=Anim,n = 2, default=0 ),
-      #prev_Lying3=lag(Lying, order_by=Anim,n = 3, default=0 )
+      prev_Lying3=lag(Lying, order_by=Anim,n = 3, default=0 )
       ) %>%
      mutate(
       prev_steps1=lag(Steps, order_by=Anim,n=1, default=0),
       prev_steps2=lag(Steps, order_by=Anim,n = 2, default=0 ),
-      #prev_steps3=lag(Steps, order_by=Anim,n = 3, default=0 )
+      prev_steps3=lag(Steps, order_by=Anim,n = 3, default=0 )
       )
 ```
 
@@ -181,6 +181,10 @@ data_caprino_ok_numeric <- data_caprino_ok_numeric %>% select(#-`distance(m)`,
 
 ```
 ## BORUTA selecting Animals 
+
+We use ~40% of the dataset for selecting features using BORUTA algorithm. 
+Four animals were removed.
+
 ```{r}
 data_caprino_ok_numeric %>% group_by(Anim) %>% summarise(n=n())
 train_dataset_boruta<- data_caprino_ok_numeric  %>% 
@@ -203,17 +207,16 @@ resamples<-rsample::bootstraps(train_dataset_boruta,strata = Activity,times = 30
 
 ## Using BORUTA for Feature Selection
 
-We use ~25% of the dataset for selecting features using BORUTA algorithm. 
-Four animals were removed.
 
 ### Select TOP N features
 ```{r}
 source("../scripts/select_features_boruta.R")
+library(doMC)
+registerDoMC(cores = 4)
 library(rsample)
-#var_importance <- foreach(i = 1:2, .combine = rbind) %dopar% {
 var_importance <- foreach(i = 1:length(resamples$splits), .combine = rbind) %dopar% {
   trainset<- rsample::analysis(resamples$splits[[i]])
-  partial<-select_features_boruta(trainset, "Activity",20)
+  partial<-select_features_boruta(trainset, "Activity",40)
   partial<-cbind(partial,rsample=i)
 }  
 

@@ -2,57 +2,48 @@
 title: "SHAP Values for goat behavior"
 output: html_notebook
 ---
-# Goat behavior
-## FASTSHAP
+# FASTSHAP
 
+## Datasets setup
 ```{r}
 # Load required packages
 library(dplyr)
 library(doMC)
 library(fastshap)  # for fast (approximate) Shapley values
-#library(ranger)    # for fast random forest algorithm
 
-# Simulate training data
-#trn <- gen_friedman(3000, seed = 101)
-#X <- subset(trn, select = -y)  # feature columns only
 p_function_G<- function(object, newdata) caret::predict.train(object, newdata = newdata, type = "prob")[,"G"]
 p_function_GM<- function(object, newdata) caret::predict.train(object, newdata = newdata, type = "prob")[,"GM"]
-#p_function_RS<- function(object, newdata) caret::predict.train(object, newdata = newdata, type = "prob")[,"RS"]
-#p_function_RL<- function(object, newdata) caret::predict.train(object, newdata = newdata, type = "prob")[,"RL"]
 p_function_R<- function(object, newdata) caret::predict.train(object, newdata = newdata, type = "prob")[,"R"]
 p_function_W<- function(object, newdata) caret::predict.train(object, newdata = newdata, type = "prob")[,"W"]
 
-trainset<-train_dataset %>% 
+trainset<-trainset_dataset_feature_selection %>% 
             select(selected_variables$variable) %>% #select(-prevActivity1,-prevActivity2,-prevActivity3) %>%
             na.omit() %>% 
             as.data.frame()
-trainset_y<-train_dataset %>% 
+trainset_y<-trainset_dataset_feature_selection %>% 
             select(Activity) %>%
             na.omit() %>% unlist() %>% unname()
 
 
 trainset_G<-trainset[which(trainset_y=="G"),]
 trainset_GM<-trainset[which(trainset_y=="GM"),]
-#trainset_RS<-trainset[which(trainset_y=="RS"),]
-#trainset_RL<-trainset[which(trainset_y=="RL"),]
 trainset_R<-trainset[which(trainset_y=="R"),]
 trainset_W<-trainset[which(trainset_y=="W"),]
 
-                    
-#ranks<-rank(-table(trainset_y), ties.method="first")
-#trainset_y<-ranks[trainset_y] %>% unname()
-#readr::write_csv(cbind(trainset,Activity=trainset_y),"goat-dataset-example.csv")
-#caret::predict.train(boostFit, newdata = trainset, type='prob')[,"RL"]
-# Compute fast (approximate) Shapley values using 10 Monte Carlo repetitions
-shap_values_G <- fastshap::explain(boostFit, X = trainset, pred_wrapper = p_function_G, nsim = 50,newdata=trainset_G)
-shap_values_GM <- fastshap::explain(boostFit, X = trainset, pred_wrapper = p_function_GM, nsim = 50,newdata=trainset_GM)
-#shap_values_RS<- fastshap::explain(boostFit, X = trainset_RS, pred_wrapper = p_function_RS, nsim = 10)
-#shap_values_RL <- fastshap::explain(boostFit, X = trainset_RL, pred_wrapper = p_function_RL, nsim = 10)
-shap_values_R<- fastshap::explain(boostFit, X = trainset, pred_wrapper = p_function_R, nsim = 50,newdata=trainset_R)
-shap_values_W <- fastshap::explain(boostFit, X = trainset, pred_wrapper = p_function_W, nsim = 50,newdata=trainset_W,adjust=TRUE)
+#boostFit_boruta<-boostFit
+```
+
+## Calculate SHAP
+
+```{r}
+                    # Compute fast (approximate) Shapley values using 10 Monte Carlo repetitions
+shap_values_G <- fastshap::explain(boostFit_boruta, X = trainset, pred_wrapper = p_function_G, nsim = 50,newdata=trainset_G)
+shap_values_GM <- fastshap::explain(boostFit_boruta, X = trainset, pred_wrapper = p_function_GM, nsim = 50,newdata=trainset_GM)
+shap_values_R<- fastshap::explain(boostFit_boruta, X = trainset, pred_wrapper = p_function_R, nsim = 50,newdata=trainset_R)
+shap_values_W <- fastshap::explain(boostFit_boruta, X = trainset, pred_wrapper = p_function_W, nsim = 50,newdata=trainset_W,adjust=TRUE)
 
 shap_values_W[8,] %>% sum()+0.145
-p_function_W(boostFit,trainset_W[8,])
+p_function_W(boostFit_boruta,trainset_W[8,])
 
 p1<-autoplot(shap_values_G[13,], type = "contribution")+ggdark::dark_theme_classic()
 
@@ -68,6 +59,7 @@ gridExtra::grid.arrange(p1, p2+ggdark::dark_theme_classic(), nrow = 1)
 #ggsave("/tmp/shap-basic.png",height = 3, width = 4,units = 'in')
 
 ```
+## Visual
 ### Force plots
 ```{r}
 force_plot(object = shap_values_W[8L,], feature_values = trainset_W[8L, ], display = "html",baseline = 0.14) 
@@ -76,25 +68,18 @@ force_plot(object = shap_values_W[8L,], feature_values = trainset_W[8L, ], displ
 ```{r}
 trainset_GM$class<-"GM"
 trainset_G$class<-"G"
-#trainset_RL$class<-"RL"
-#trainset_RS$class<-"RS"
 trainset_R$class<-"R"
 trainset_W$class<-"W"
 
 trainset_G  <- trainset_G %>% reshape2::melt() 
 trainset_GM <- trainset_GM %>% reshape2::melt() 
-#trainset_RL <- trainset_RL %>% reshape2::melt() 
-#trainset_RS <- trainset_RS %>% reshape2::melt() 
 trainset_R <- trainset_R %>% reshape2::melt() 
 trainset_W <- trainset_W %>% reshape2::melt() 
 
 trainset_melted<-rbind(trainset_G,
                    trainset_GM
-                  # trainset_RL
-                  #,trainset_RS
                   ,trainset_R
                   ,trainset_W
-                   
                    )
 
 range01 <- function(x){(x-min(x))/(max(x)-min(x))}
@@ -105,22 +90,16 @@ trainset_melted_scaled<-trainset_melted %>% group_by(variable) %>% mutate(value_
 ```{r}
 shap_values_GM$class<-"GM"
 shap_values_G$class<-"G"
-#shap_values_RL$class<-"RL"
-#shap_values_RS$class<-"RS"
 shap_values_R$class<-"R"
 shap_values_W$class<-"W"
 
 shap_value_G  <- shap_values_G %>% reshape2::melt() 
 shap_value_GM <- shap_values_GM %>% reshape2::melt() 
-#shap_value_RL <- shap_values_RL %>% reshape2::melt() 
-#shap_value_RS <- shap_values_RS %>% reshape2::melt() 
 shap_value_R <- shap_values_R %>% reshape2::melt() 
 shap_value_W <- shap_values_W %>% reshape2::melt() 
 
 shap_values<-rbind(shap_value_G,
                    shap_value_GM,
-                  # shap_value_RL
-                  #,shap_value_RS
                    shap_value_R,
                    shap_value_W
                    
@@ -128,6 +107,8 @@ shap_values<-rbind(shap_value_G,
 
 shap_values
 ```
+
+
 ### Summary plots
 ```{r}
 shap_values %>% group_by(class,variable) %>% summarise(mean=mean(abs(value))) %>% arrange(desc(mean)) %>%
@@ -147,15 +128,14 @@ pl
 cbind(shap_values, feature_value=trainset_melted_scaled$value_scale) %>% # filter(class=="GM") %>%
   ggplot()+
   facet_wrap(~class)+
-  ggdark::dark_theme_bw()+
- # geom_jitter(aes(y=variable,x=value, color = value), position = position_jitter(w = 0, h = 0.4),size=0.1)
-  #geom_violin(aes(y=variable,x=value))+
+  #ggdark::dark_theme_bw()+
+  theme_classic()+
   geom_hline(yintercept=0, 
                 color = "red", size=0.5)+
-  ggforce::geom_sina(aes(x=variable,y=value,color=feature_value),size=0.8,bins=4,alpha=0.5)+
-    scale_colour_gradient(low = "yellow", high = "red", na.value = NA)+
-   #scale_colour_gradientn(colours = terrain.colors(10))+
-  xlab("Feature")+ylab("SHAP value")+
+  ggforce::geom_sina(aes(x=variable,y=value,color=feature_value),size=2.2,bins=4,alpha=0.9,shape=15)+
+   scale_colour_gradient(low = "yellow", high = "red", na.value = NA)+
+   scale_colour_gradient(low = "skyblue", high = "orange", na.value = NA)+
+   xlab("Feature")+ylab("SHAP value")+
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
   
   #xlab("Mean(|Shap Value|) Average impact on model output magnitude")
