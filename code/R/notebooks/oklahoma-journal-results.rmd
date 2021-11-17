@@ -194,33 +194,46 @@ data_caprino_ok_numeric_w_classes %>% group_by(Activity) %>% summarise(n=n())
 #data_caprino_ok_numeric$Anim %>% unique()
 ```
 
+## Bootstraping
+
+```{r}
+resamples<-rsample::bootstraps(train_dataset_boruta,strata = Activity,times = 30  )
+```
+
 
 ## Using BORUTA for Feature Selection
 
 We use ~25% of the dataset for selecting features using BORUTA algorithm. 
 Four animals were removed.
 
-```{r}
-var_importance_boruta_raw<-Boruta(Activity ~ . ,data=train_dataset_boruta %>% na.omit())
-```
 ### Select TOP N features
 ```{r}
-num_of_feat<-20
+source("../scripts/select_features_boruta.R")
+library(rsample)
+#var_importance <- foreach(i = 1:2, .combine = rbind) %dopar% {
+var_importance <- foreach(i = 1:length(resamples$splits), .combine = rbind) %dopar% {
+  trainset<- rsample::analysis(resamples$splits[[i]])
+  partial<-select_features_boruta(trainset, "Activity",20)
+  partial<-cbind(partial,rsample=i)
+}  
 
-var_importance_boruta <-
-  attStats(var_importance_boruta_raw) %>% 
-  filter(decision == 'Confirmed') %>% 
-  select(meanImp) %>% 
-  arrange(desc(meanImp)) %>% top_n(num_of_feat)
-var_importance_boruta <- var_importance_boruta %>% 
-  tibble::rownames_to_column('variable')
-var_importance_boruta_final <- apply(var_importance_boruta$variable %>% t() , 2, 
-                             function(x) stringr::str_replace_all(x, 
-                                                                  pattern = "`", 
-                                                                  replacement = "")) %>% as.data.frame()
+var_always_present<-var_importance %>% group_by(variable) %>% summarise(n=n()) %>% filter(n==30) %>% ungroup() %>% select(variable)
+v<-var_always_present %>% unlist() %>% unname()
+
+
+
+var_importance_boruta_final<- var_importance %>% filter(variable %in% v) %>% group_by(variable) %>% summarise(grandmeanImp=mean(meanImp)) %>% arrange(grandmeanImp %>% desc()) %>% ungroup() %>% select(variable)
+
+var_importance_boruta_final <-
+    apply(var_importance_boruta_final$variable %>% t() , 2,
+          function(x)
+            stringr::str_replace_all(x,
+                                     pattern = "`",
+                                     replacement = "")) %>% as.data.frame()
 names(var_importance_boruta_final) <- "variable"
-var_importance_boruta
+var_importance_boruta_final
 ```
+
 
 # MODELS
 ## Macro and Micro metrics
