@@ -46,9 +46,9 @@ A Description of the dataset used for training and testing. In this case, we hav
 
 1.  A first approach uses BORUTA and we test models with top 5, 10, 15 and 20 features always present according to BORUTA.
 
-2.  A second approach analyzes features using SHAP values when training a model. Summary Plots can be generated considering a sample of the \~30 datasets.
+2.  ~~A second approach analyzes features using SHAP values when training a model. Summary Plots can be generated considering a sample of the \~30 datasets.~~
 
-    At the end 6 different sets of features are considered. (Four from BORUTA and two from SHAP)
+    At the end ~~6~~ 4 different sets of features are considered. (Four from BORUTA and ~~two from SHAP~~)
 
 **Dataset B** is used for analyzing model performance using different set of features using hold-out LOOCV
 
@@ -81,3 +81,5 @@ Show a couple of tables withe the features selected by BORUTA
 3.2 Model performance results
 
 ## Discussion
+
+THe idea is to use SHAP values results for the best model to analize and disccuss the quality of the features
