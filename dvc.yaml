@@ -1,10 +1,9 @@
 stages:
   preprocess:
     cmd: Rscript code/R/scripts/prepare_dataset.R --input rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
-      --output data/seba-caprino-preocessed.tsv
+      --output data/preprocessed/seba-caprino-preocessed.tsv
     deps:
     - code/R/scripts/prepare_dataset.R
     - rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
     outs:
-    - data/:
-        persist: true
+    - data/preprocessed
