@@ -111,21 +111,23 @@ shap_values
 
 ### Summary plots
 ```{r}
-shap_values %>% group_by(class,variable) %>% summarise(mean=mean(abs(value))) %>% arrange(desc(mean)) %>%
+summary_plot_1<- shap_values %>% group_by(class,variable) %>% summarise(mean=mean(abs(value))) %>% arrange(desc(mean)) %>%
   ggplot()+
   ggdark::dark_theme_classic()+
   geom_col(aes(y=variable,x=mean,group = class, fill = class),position="stack")+
   xlab("Mean(|Shap Value|) Average impact on model output magnitude")
-pl<-plotly::ggplotly()
+summary_plot_1
+pl<-plotly::ggplotly(summary_plot_1)
 pl
-#pl<-plotly::partial_bundle(pl)
-#htmlwidgets::saveWidget(pl,"/tmp/plotly.html")
+
+pl<-plotly::partial_bundle(pl)
+htmlwidgets::saveWidget(pl,"/tmp/plotly.html")
 ```
 
 ```{r fig.height=8, fig.width=12}
 
 
-cbind(shap_values, feature_value=trainset_melted_scaled$value_scale) %>% # filter(class=="GM") %>%
+summary_plot_2<-cbind(shap_values, feature_value=trainset_melted_scaled$value_scale) %>% # filter(class=="GM") %>%
   ggplot()+
   facet_wrap(~class)+
   #ggdark::dark_theme_bw()+
@@ -144,6 +146,8 @@ cbind(shap_values, feature_value=trainset_melted_scaled$value_scale) %>% # filte
 #plotly::ggplotly()
 #autoplot(shap_values, type = "contribution", row_num = 2)
 #plotly::ggplotly()
+
+summary_plot_2
 ```
 
 ### Dependency plots
