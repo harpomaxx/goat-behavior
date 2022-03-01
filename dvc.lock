@@ -1,0 +1,17 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: Rscript code/R/scripts/prepare_dataset.R --input rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
+      --output data/seba-caprino-preocessed.tsv
+    deps:
+    - path: code/R/scripts/prepare_dataset.R
+      md5: 2ab6e37cc4cfc8998725523b5dbc03f7
+      size: 2729
+    - path: rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
+      md5: 1203d468e72db3b5c47e1d45a8f5bdcb
+      size: 266391
+    outs:
+    - path: data/
+      md5: 5bb10d5dde74fb10f78f8d6c296615c3.dir
+      size: 162056
+      nfiles: 1
