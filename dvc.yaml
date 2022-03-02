@@ -1,9 +1,20 @@
 stages:
   preprocess:
     cmd: Rscript code/R/scripts/prepare_dataset.R --input rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
-      --output data/preprocessed/seba-caprino-preocessed.tsv
+      --output data/preprocessed/seba-caprino-preprocessed.tsv
     deps:
     - code/R/scripts/prepare_dataset.R
+    - code/R/scripts/create_numeric_features.R
+    - code/R/scripts/create_lag_features.R
     - rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
     outs:
     - data/preprocessed
+  select_initial_features:
+    cmd: Rscript code/R/scripts/select_initial_features_dataset.R --input data/preprocessed/seba-caprino-preprocessed.tsv
+      --output data/initial_features/seba-caprino-preprocessed-initial-features.tsv
+    deps:
+    - code/R/scripts/select_initial_features.R
+    - code/R/scripts/select_initial_features_dataset.R
+    - data/preprocessed/seba-caprino-preprocessed.tsv
+    outs:
+    - data/initial_features

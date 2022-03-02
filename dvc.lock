@@ -2,16 +2,40 @@ schema: '2.0'
 stages:
   preprocess:
     cmd: Rscript code/R/scripts/prepare_dataset.R --input rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
-      --output data/preprocessed/seba-caprino-preocessed.tsv
+      --output data/preprocessed/seba-caprino-preprocessed.tsv
     deps:
+    - path: code/R/scripts/create_lag_features.R
+      md5: 3a98b3ada91e90779a10f55547079d2f
+      size: 2323
+    - path: code/R/scripts/create_numeric_features.R
+      md5: 50e383f27ae20404555e2f4f792390a8
+      size: 2091
     - path: code/R/scripts/prepare_dataset.R
-      md5: 3338f2599cc5c0fb1c655b44a82ae135
-      size: 2607
+      md5: fe6b0b3d5906f532a6afaaee685c0974
+      size: 1079
     - path: rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
       md5: 1203d468e72db3b5c47e1d45a8f5bdcb
       size: 266391
     outs:
     - path: data/preprocessed
-      md5: 28e708bbbff1758b36d5f0b0af9423f8.dir
-      size: 182936
+      md5: e08039bc9068ff29f37cef575b77a82d.dir
+      size: 463618
+      nfiles: 1
+  select_initial_features:
+    cmd: Rscript code/R/scripts/select_initial_features_dataset.R --input data/preprocessed/seba-caprino-preprocessed.tsv
+      --output data/initial_features/seba-caprino-preprocessed-initial-features.tsv
+    deps:
+    - path: code/R/scripts/select_initial_features.R
+      md5: af6f134cb3696389ad537930af81b4a2
+      size: 1988
+    - path: code/R/scripts/select_initial_features_dataset.R
+      md5: 4b6076cc0aa98aad583424b5c40af7ab
+      size: 938
+    - path: data/preprocessed/seba-caprino-preprocessed.tsv
+      md5: ca5a85b5b1ecee251f2ee46ac04eea57
+      size: 463618
+    outs:
+    - path: data/initial_features
+      md5: 8eee419eabb2dab478b30bffbcddb7c9.dir
+      size: 378331
       nfiles: 1
