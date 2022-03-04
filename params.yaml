@@ -1,0 +1,12 @@
+select_features_boruta:
+  maxnfeat: 20
+  numsamp: 2
+  
+separate_train_test:
+  excluded_anim: 
+    - 1553
+    - 1635
+    - 1779
+    - 505081
+    - 505075 
+    - 505080

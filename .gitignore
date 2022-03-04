@@ -3,3 +3,5 @@
 .RData
 .Ruserdata
 /data
+/select_features_boruta.yaml
+/separate_train_test.yaml
