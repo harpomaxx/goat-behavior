@@ -5,6 +5,7 @@ source("code/R/scripts/separate_train_test.R")
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(yaml))
 
 #### MAIN 
 
@@ -30,12 +31,25 @@ if (opt$input %>% is.null() ||
   message("[] Parameters missing. Please use --help for look at available parameters.")
   quit()
 } else{
-  ## Select features
+  ## Read Dataset
   dataset <-
     readr::read_delim(opt$input, col_types = cols(), delim = '\t')
-  split_datasets <- separate_train_test(dataset = dataset)
+  ## Set default parameters
+  params <- yaml::read_yaml("params.yaml")
+  if(!  "separate_train_test" %in% names(params)) { 
+    message("[] Error: No information for excluding animals")
+    quit()
+    }
+  split_datasets <- 
+    separate_train_test(dataset = dataset,
+                        excluded_anim=params$separate_train_test$excluded_anim)
   ## Save dataset
   dir.create(dirname(opt$output), showWarnings = FALSE)
   readr::write_delim(split_datasets$trainset, file = paste0(opt$output,"_trainset.tsv"), delim = '\t')
   readr::write_delim(split_datasets$testset, file = paste0(opt$output,"_testset.tsv"), delim = '\t')
+  ## Save Metric
+  list("metrics" = list(
+    "nrow_trainset" = nrow(split_datasets$trainset),
+    "nrow_testset" = nrow(split_datasets$testset)
+  )) %>% as.yaml() %>% write("separate_train_test.yaml")
 }
