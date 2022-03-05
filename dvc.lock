@@ -22,13 +22,13 @@ stages:
       size: 463618
       nfiles: 1
   select_initial_features:
-    cmd: Rscript code/R/scripts/select_initial_features_dataset.R --input data/preprocessed/seba-caprino-preprocessed.tsv
+    cmd: Rscript code/R/scripts/select_initial_features_cmd.R --input data/preprocessed/seba-caprino-preprocessed.tsv
       --output data/initial_features/seba-caprino-preprocessed-initial-features.tsv
     deps:
     - path: code/R/scripts/select_initial_features.R
       md5: af6f134cb3696389ad537930af81b4a2
       size: 1988
-    - path: code/R/scripts/select_initial_features_dataset.R
+    - path: code/R/scripts/select_initial_features_cmd.R
       md5: 4b6076cc0aa98aad583424b5c40af7ab
       size: 938
     - path: data/preprocessed/seba-caprino-preprocessed.tsv
@@ -98,29 +98,29 @@ stages:
       size: 164
       nfiles: 1
   select_features_boruta:
-    cmd: Rscript code/R/scripts/select_features_boruta_dataset.R --input data/split/seba-caprino_trainset.tsv
+    cmd: Rscript code/R/scripts/select_features_boruta_cmd.R --input data/split/seba-caprino_features.tsv
       --output data/topnfeatures/seba-caprino
     deps:
     - path: code/R/scripts/select_features_boruta.R
       md5: fd2ddd9c5f9d67832922722a102c9d0c
       size: 3429
-    - path: code/R/scripts/select_features_boruta_dataset.R
-      md5: 19497e6d4933c268c0e151b63d24ec84
-      size: 2350
-    - path: data/split/seba-caprino_trainset.tsv
+    - path: code/R/scripts/select_features_boruta_cmd.R
+      md5: 0bbb8c4314b8c828ba21c1fc94f1c9a2
+      size: 2357
+    - path: data/split/seba-caprino_features.tsv
       md5: 2acc64c28713f1b815e4595cabc08c62
       size: 183581
     params:
       params.yaml:
-        select_features_boruta.maxnfeat: 40
-        select_features_boruta.numsamp: 30
+        select_features_boruta.maxnfeat: 20
+        select_features_boruta.numsamp: 1
     outs:
     - path: data/topnfeatures
-      md5: ff013510f79d43fe147357d0f4358a14.dir
-      size: 331
+      md5: 9776979e88546e5dcc159076eca7ef35.dir
+      size: 192
       nfiles: 1
     - path: select_features_boruta.yaml
-      md5: 32ff59f98f5e60a6b8ecdb244190e976
+      md5: ce51cf6b83ccadd4e1da6f9f32a141ee
       size: 41
   separate_train_test:
     cmd: Rscript code/R/scripts/separate_train_test_dataset.R --input data/initial_features/seba-caprino-preprocessed-initial-features.tsv
@@ -153,27 +153,78 @@ stages:
       md5: 088183b4d0ee1bb2ebb17581dbe40317
       size: 48
   train_model:
-    cmd: Rscript code/R/scripts/train_model_dataset.R --input data/split/seba-caprino_trainset.tsv
+    cmd: Rscript code/R/scripts/train_model_cmd.R --input data/split/seba-caprino_features.tsv
       --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv --model
       models/boost/seba-caprino
     deps:
     - path: code/R/scripts/train_model.R
       md5: d2c854ab322376d1d1e794e4f4ca8e93
       size: 1678
-    - path: code/R/scripts/train_model_dataset.R
+    - path: code/R/scripts/train_model_cmd.R
       md5: 718c99b4899e1ae484122ea0bacf7750
       size: 2183
-    - path: data/split/seba-caprino_trainset.tsv
+    - path: data/split/seba-caprino_features.tsv
       md5: 2acc64c28713f1b815e4595cabc08c62
       size: 183581
     - path: data/topnfeatures/seba-caprino_selected_features.tsv
-      md5: d267f40f10241c345ef86d0c8906863b
-      size: 331
+      md5: 6d021635b35b5c991431b84017c3ed8b
+      size: 192
     outs:
     - path: metrics/train_model.yaml
-      md5: 8089eb190052a070b4ee4173e58832ba
+      md5: c96e4e1475caeae0e05d5369792f9058
       size: 72
     - path: models/boost
-      md5: b087da84562d514f965a94b34e645659.dir
-      size: 174448
+      md5: 4fac10c7aa4fce4f43217b3df3fbd34b.dir
+      size: 122458
+      nfiles: 1
+  separate_dataset:
+    cmd: Rscript code/R/scripts/separate_dataset_cmd.R --input data/initial_features/seba-caprino-preprocessed-initial-features.tsv
+      --output data/split/seba-caprino
+    deps:
+    - path: code/R/scripts/separate_dataset.R
+      md5: 33ba754c90d06df1764d51534a1a7885
+      size: 722
+    - path: code/R/scripts/separate_dataset_cmd.R
+      md5: da23a071f92241d8fe4c8f89bfc1c5a0
+      size: 1872
+    - path: data/initial_features/seba-caprino-preprocessed-initial-features.tsv
+      md5: 2f84b0847baeb584a7a68290e21bb8f3
+      size: 378331
+    params:
+      params.yaml:
+        separate_dataset.excluded_anim:
+        - 1553
+        - 1635
+        - 1779
+        - 505081
+        - 505075
+        - 505080
+    outs:
+    - path: data/split
+      md5: 969854274a9db190d1c8ca46fe4a35d4.dir
+      size: 378710
+      nfiles: 2
+    - path: metrics/separate_dataset.yaml
+      md5: d801eccf1fe00b10d1c1a3b0859136ae
+      size: 46
+  prepare_dataset:
+    cmd: Rscript code/R/scripts/prepare_dataset_cmd.R --input rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
+      --output data/preprocessed/seba-caprino-preprocessed.tsv
+    deps:
+    - path: code/R/scripts/create_lag_features.R
+      md5: 3a98b3ada91e90779a10f55547079d2f
+      size: 2323
+    - path: code/R/scripts/create_numeric_features.R
+      md5: 50e383f27ae20404555e2f4f792390a8
+      size: 2091
+    - path: code/R/scripts/prepare_dataset_cmd.R
+      md5: fe6b0b3d5906f532a6afaaee685c0974
+      size: 1079
+    - path: rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
+      md5: 1203d468e72db3b5c47e1d45a8f5bdcb
+      size: 266391
+    outs:
+    - path: data/preprocessed
+      md5: e08039bc9068ff29f37cef575b77a82d.dir
+      size: 463618
       nfiles: 1

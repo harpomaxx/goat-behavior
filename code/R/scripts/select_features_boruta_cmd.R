@@ -1,12 +1,11 @@
 #!/bin/Rscript
-#  separate train and test datasets
+#  Select variables using Boruta algorithm
 
 source("code/R/scripts/select_features_boruta.R")
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(yaml))
-suppressPackageStartupMessages(library(rjson))
 #### MAIN 
 
 option_list <- list(
@@ -68,7 +67,7 @@ if (opt$input %>% is.null() ||
                      file = paste0(opt$output,"_selected_features.tsv"), 
                      delim = '\t')
   ## Save Metric
-  list("metrics"=list("number_of_features_selected"=nrow(selected_features_dataframe)))%>% 
+  list("info"=list("number_of_features_selected"=nrow(selected_features_dataframe)))%>% 
     as.yaml() %>% write("select_features_boruta.yaml",)
   #list("number_of_features_selected"=nrow(selected_features_dataframe))%>% rjson::toJSON() %>% write("select_features_boruta-nfeat.json")
   

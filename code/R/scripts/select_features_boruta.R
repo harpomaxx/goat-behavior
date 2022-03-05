@@ -25,7 +25,7 @@ select_features_boruta <- function(train_dataset_boruta,
                                    num_of_feat = 20) {
   boruta_formula<-as.formula(paste0(category,"~."))
   var_importance_boruta_raw <-
-    Boruta(boruta_formula, data = train_dataset_boruta %>% na.omit())
+    Boruta(boruta_formula, data = train_dataset_boruta %>% na.omit(),num.threads=2)
   var_importance_boruta <-
     attStats(var_importance_boruta_raw) %>%
     filter(decision == 'Confirmed') %>%
@@ -53,7 +53,7 @@ select_maxn_features <- function(dataset,
                                  num_of_samp = 30){
   suppressPackageStartupMessages(library(doMC))
   suppressPackageStartupMessages(library(rsample))
-  registerDoMC(cores = 4)
+  registerDoMC(cores = 5)
   message("[] Selecting best features.",appendLF = FALSE )
   resamples <-
     rsample::bootstraps(dataset, strata = Activity, times = num_of_samp)
