@@ -1,8 +1,8 @@
 select_features_boruta:
-  maxnfeat: 20
-  numsamp: 2
+  maxnfeat: 40
+  numsamp: 30
   
-separate_train_test:
+separate_dataset:
   excluded_anim: 
     - 1553
     - 1635

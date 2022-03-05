@@ -18,19 +18,20 @@ stages:
     - data/preprocessed/seba-caprino-preprocessed.tsv
     outs:
     - data/initial_features
-  separate_train_test:
-    cmd: Rscript code/R/scripts/separate_train_test_dataset.R --input data/initial_features/seba-caprino-preprocessed-initial-features.tsv 
+    
+  separate_dataset:
+    cmd: Rscript code/R/scripts/separate_dataset_cmd.R --input data/initial_features/seba-caprino-preprocessed-initial-features.tsv 
       --output data/split/seba-caprino
     deps:
-    - code/R/scripts/separate_train_test_dataset.R
-    - code/R/scripts/separate_train_test.R
+    - code/R/scripts/separate_dataset_cmd.R
+    - code/R/scripts/separate_dataset.R
     - data/initial_features/seba-caprino-preprocessed-initial-features.tsv 
     outs:
     - data/split
     params:
-    - separate_train_test.excluded_anim
+    - separate_dataset.excluded_anim
     metrics:
-    - separate_train_test.yaml:
+    - metrics/separate_dataset.yaml:
         cache: false
     
   select_features_boruta:
@@ -48,3 +49,17 @@ stages:
     - select_features_boruta.numsamp
     outs:
     - data/topnfeatures
+    
+  train_model:
+    cmd: Rscript code/R/scripts/train_model_dataset.R --input data/split/seba-caprino_trainset.tsv 
+      --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv --model models/boost/seba-caprino
+    deps:
+    - code/R/scripts/train_model_dataset.R
+    - code/R/scripts/train_model.R
+    - data/split/seba-caprino_trainset.tsv
+    - data/topnfeatures/seba-caprino_selected_features.tsv
+    outs:
+    - models/boost
+    metrics:
+    - metrics/train_model.yaml:
+        cache: false

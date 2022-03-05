@@ -1,7 +1,8 @@
 #!/bin/Rscript
-#  separate train and test datasets
+#  separate into two datasets (namely train and test datasets)
+# trainset is used for feature  analysis and test for LOOCV results
 
-source("code/R/scripts/separate_train_test.R")
+source("code/R/scripts/separate_dataset.R")
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
@@ -36,20 +37,20 @@ if (opt$input %>% is.null() ||
     readr::read_delim(opt$input, col_types = cols(), delim = '\t')
   ## Set default parameters
   params <- yaml::read_yaml("params.yaml")
-  if(!  "separate_train_test" %in% names(params)) { 
+  if(!  "separate_dataset" %in% names(params)) { 
     message("[] Error: No information for excluding animals")
     quit()
     }
   split_datasets <- 
-    separate_train_test(dataset = dataset,
-                        excluded_anim=params$separate_train_test$excluded_anim)
+    separate_datasets(dataset = dataset,
+                        excluded_anim=params$separate_dataset$excluded_anim)
   ## Save dataset
   dir.create(dirname(opt$output), showWarnings = FALSE)
-  readr::write_delim(split_datasets$trainset, file = paste0(opt$output,"_trainset.tsv"), delim = '\t')
-  readr::write_delim(split_datasets$testset, file = paste0(opt$output,"_testset.tsv"), delim = '\t')
+  readr::write_delim(split_datasets$trainset, file = paste0(opt$output,"_features.tsv"), delim = '\t')
+  readr::write_delim(split_datasets$testset, file = paste0(opt$output,"_loocv.tsv"), delim = '\t')
   ## Save Metric
-  list("metrics" = list(
-    "nrow_trainset" = nrow(split_datasets$trainset),
-    "nrow_testset" = nrow(split_datasets$testset)
-  )) %>% as.yaml() %>% write("separate_train_test.yaml")
+  list("info" = list(
+    "nrow_features" = nrow(split_datasets$trainset),
+    "nrow_loocv" = nrow(split_datasets$testset)
+  )) %>% as.yaml() %>% write("metrics/separate_dataset.yaml")
 }

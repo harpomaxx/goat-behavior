@@ -1,14 +1,15 @@
 suppressPackageStartupMessages(library(dplyr))
 
-#' Title
+#' Separate the dataset  separate into two datasets 
 #'
-#' @param dataset 
+#' @param dataset a dataset with goat behavior
+#' @param excluded_animals the list of animals to include on each dataset
 #'
 #' @return a list with train and test set
 #' @export
 #'
 #' @examples
-separate_train_test<-function(dataset,excluded_animals) {
+separate_datasets<-function(dataset,excluded_animals) {
   test_dataset <-
     #dataset %>% filter(!(Anim %in% c(1553, 1635, 1779, 505081, 505075, 505080)))
     dataset %>% filter(!(Anim %in% excluded_animals))
