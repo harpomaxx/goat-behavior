@@ -2,8 +2,9 @@
 #  select initial features
 
 
-source("code/R/functions/select_initial_features.R")
+source("code/R/functions/select_features_initial.R")
 suppressPackageStartupMessages(library(optparse))
+suppressPackageStartupMessages(library(yaml))
 
 #### MAIN 
 
@@ -24,4 +25,8 @@ if (opt$input %>% is.null() || opt$output %>% is.null()){
   ## Save dataset
   dir.create(dirname(opt$output), showWarnings = FALSE)
   readr::write_delim(dataset, file = opt$output, delim = '\t')
+  ## save metrics
+  list("info"=list("nfeat_sel"=ncol(dataset)))%>% 
+    as.yaml() %>% write("metrics/select_features_initial.yaml",)
+  
 }

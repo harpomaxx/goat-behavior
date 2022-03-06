@@ -23,6 +23,7 @@ suppressPackageStartupMessages(library(tibble))
 select_features_boruta <- function(train_dataset_boruta, 
                                    category ,
                                    num_of_feat = 20) {
+  set.seed(19091974) 
   boruta_formula<-as.formula(paste0(category,"~."))
   var_importance_boruta_raw <-
     Boruta(boruta_formula, data = train_dataset_boruta %>% na.omit(),num.threads=2)
@@ -51,6 +52,7 @@ select_features_boruta <- function(train_dataset_boruta,
 select_maxn_features <- function(dataset,
                                  max_num_of_feat = 20,
                                  num_of_samp = 30){
+  set.seed(19091974) 
   suppressPackageStartupMessages(library(doMC))
   suppressPackageStartupMessages(library(rsample))
   registerDoMC(cores = 5)

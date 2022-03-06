@@ -10,13 +10,16 @@ stages:
     outs:
     - data/preprocessed
     
-  select_initial_features:
-    cmd: Rscript code/R/scripts/020_select_initial_features_cmd.R --input data/preprocessed/seba-caprino-preprocessed.tsv
+  select_features_initial:
+    cmd: Rscript code/R/scripts/020_select_features_initial_cmd.R --input data/preprocessed/seba-caprino-preprocessed.tsv
       --output data/initial_features/seba-caprino-preprocessed-initial-features.tsv 
     deps:
-    - code/R/functions/select_initial_features.R
-    - code/R/scripts/020_select_initial_features_cmd.R
+    - code/R/functions/select_features_initial.R
+    - code/R/scripts/020_select_features_initial_cmd.R
     - data/preprocessed/seba-caprino-preprocessed.tsv
+    metrics:
+    - metrics/select_features_initial.yaml:
+       cache: false
     outs:
     - data/initial_features
     
@@ -43,7 +46,7 @@ stages:
     - code/R/functions/select_features_boruta.R
     - data/split/seba-caprino_features.tsv  
     metrics:
-    - select_features_boruta.yaml:
+    - metrics/select_features_boruta.yaml:
         cache: false
     params:
     - select_features_boruta.maxnfeat
@@ -65,6 +68,8 @@ stages:
     - metrics/train_model_predictions.csv:
         cache: false
     metrics:
+    - metrics/train_model_resample.yaml:
+        cache: false
     - metrics/train_model_metrics_G.yaml:
         cache: false
     - metrics/train_model_metrics_GM.yaml:
@@ -72,6 +77,4 @@ stages:
     - metrics/train_model_metrics_W.yaml:
         cache: false
     - metrics/train_model_metrics_R.yaml:
-        cache: false
-    - metrics/train_model.yaml:
         cache: false

@@ -60,7 +60,16 @@ if (opt$input %>% is.null()  ||
   saveRDS(boost_model, file = paste0(opt$model,"_model.rds"))
   
   ## Save Metric
-  boost_model$results[c(8,10,11,12)] %>% as.yaml() %>% write("metrics/train_model.yaml")
+  #boost_model$results[c(8,10,11,12)] %>% 
+  #  as.yaml() %>% write("metrics/train_model.yaml")
+  
+  ## Save resample metrics
+  boost_model$resample %>% select(Accuracy,AUC) %>% 
+    summarise(mean_AUC=mean(AUC),sd_AUC=sd(AUC), 
+              mean_Acc=mean(Accuracy),sd_Acc=sd(Accuracy)) %>%
+    as.yaml() %>% write("metrics/train_model_resample.yaml")
+  
+  
   ## Save predictions results
   results<-predict_activity(boost_model,dataset)
   #write_csv(results$cm %>% as.data.frame() %>% tibble::rownames_to_column("class"), "metrics/train_model_cm.csv")
