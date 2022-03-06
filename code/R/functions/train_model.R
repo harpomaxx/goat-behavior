@@ -4,6 +4,7 @@ suppressPackageStartupMessages(library(tibble))
 suppressPackageStartupMessages(library(catboost))
 
 train_model <- function(dataset, selected_variables, gridsearch=NULL) {
+  set.seed(19091974) 
   
   ## Control and Resampling setup
   ctrl_fast <- trainControl(
@@ -58,3 +59,15 @@ train_model <- function(dataset, selected_variables, gridsearch=NULL) {
   )
   boost_model
 }
+
+
+predict_activity<-function(model,dataset){
+
+  predictions<-predict(model,dataset)  
+  cm <- caret::confusionMatrix(reference=dataset$Activity %>% as.factor(),
+                               predictions %>% as.factor() )
+  list(cm=cm$byClass,
+       predictions=predictions, 
+       tab=cm$table)
+}
+

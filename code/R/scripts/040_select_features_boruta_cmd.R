@@ -1,7 +1,7 @@
 #!/bin/Rscript
 #  Select variables using Boruta algorithm
 
-source("code/R/scripts/select_features_boruta.R")
+source("code/R/functions/select_features_boruta.R")
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))

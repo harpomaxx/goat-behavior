@@ -1,31 +1,31 @@
 stages:
   prepare_dataset:
-    cmd: Rscript code/R/scripts/prepare_dataset_cmd.R --input rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
+    cmd: Rscript code/R/scripts/010_prepare_dataset_cmd.R --input rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
       --output data/preprocessed/seba-caprino-preprocessed.tsv
     deps:
-    - code/R/scripts/prepare_dataset_cmd.R
-    - code/R/scripts/create_numeric_features.R
-    - code/R/scripts/create_lag_features.R
+    - code/R/scripts/010_prepare_dataset_cmd.R
+    - code/R/functions/create_numeric_features.R
+    - code/R/functions/create_lag_features.R
     - rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
     outs:
     - data/preprocessed
     
   select_initial_features:
-    cmd: Rscript code/R/scripts/select_initial_features_cmd.R --input data/preprocessed/seba-caprino-preprocessed.tsv
+    cmd: Rscript code/R/scripts/020_select_initial_features_cmd.R --input data/preprocessed/seba-caprino-preprocessed.tsv
       --output data/initial_features/seba-caprino-preprocessed-initial-features.tsv 
     deps:
-    - code/R/scripts/select_initial_features.R
-    - code/R/scripts/select_initial_features_cmd.R
+    - code/R/functions/select_initial_features.R
+    - code/R/scripts/020_select_initial_features_cmd.R
     - data/preprocessed/seba-caprino-preprocessed.tsv
     outs:
     - data/initial_features
     
   separate_dataset:
-    cmd: Rscript code/R/scripts/separate_dataset_cmd.R --input data/initial_features/seba-caprino-preprocessed-initial-features.tsv 
+    cmd: Rscript code/R/scripts/030_separate_dataset_cmd.R --input data/initial_features/seba-caprino-preprocessed-initial-features.tsv 
       --output data/split/seba-caprino
     deps:
-    - code/R/scripts/separate_dataset_cmd.R
-    - code/R/scripts/separate_dataset.R
+    - code/R/scripts/030_separate_dataset_cmd.R
+    - code/R/functions/separate_dataset.R
     - data/initial_features/seba-caprino-preprocessed-initial-features.tsv 
     outs:
     - data/split
@@ -36,11 +36,11 @@ stages:
         cache: false
     
   select_features_boruta:
-    cmd: Rscript code/R/scripts/select_features_boruta_cmd.R --input data/split/seba-caprino_features.tsv 
+    cmd: Rscript code/R/scripts/040_select_features_boruta_cmd.R --input data/split/seba-caprino_features.tsv 
       --output data/topnfeatures/seba-caprino
     deps:
-    - code/R/scripts/select_features_boruta_cmd.R
-    - code/R/scripts/select_features_boruta.R
+    - code/R/scripts/040_select_features_boruta_cmd.R
+    - code/R/functions/select_features_boruta.R
     - data/split/seba-caprino_features.tsv  
     metrics:
     - select_features_boruta.yaml:
@@ -52,15 +52,26 @@ stages:
     - data/topnfeatures
     
   train_model:
-    cmd: Rscript code/R/scripts/train_model_cmd.R --input data/split/seba-caprino_features.tsv 
+    cmd: Rscript code/R/scripts/050_train_model_cmd.R --input data/split/seba-caprino_features.tsv 
       --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv --model models/boost/seba-caprino
     deps:
-    - code/R/scripts/train_model_cmd.R
-    - code/R/scripts/train_model.R
+    - code/R/scripts/050_train_model_cmd.R
+    - code/R/functions/train_model.R
     - data/split/seba-caprino_features.tsv
     - data/topnfeatures/seba-caprino_selected_features.tsv
     outs:
     - models/boost
+    plots:
+    - metrics/train_model_predictions.csv:
+        cache: false
     metrics:
+    - metrics/train_model_metrics_G.yaml:
+        cache: false
+    - metrics/train_model_metrics_GM.yaml:
+        cache: false
+    - metrics/train_model_metrics_W.yaml:
+        cache: false
+    - metrics/train_model_metrics_R.yaml:
+        cache: false
     - metrics/train_model.yaml:
         cache: false

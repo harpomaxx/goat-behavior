@@ -1,6 +1,6 @@
 select_features_boruta:
   maxnfeat: 20
-  numsamp: 1 
+  numsamp: 30
   
 separate_dataset:
   excluded_anim: 

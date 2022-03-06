@@ -1,7 +1,7 @@
 #!/bin/Rscript
 #  separate train and test datasets
 
-source("code/R/scripts/train_model.R")
+source("code/R/functions/train_model.R")
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
@@ -60,11 +60,34 @@ if (opt$input %>% is.null()  ||
   saveRDS(boost_model, file = paste0(opt$model,"_model.rds"))
   
   ## Save Metric
-  #list("metrics" = list(
-  #  "Accuracy" = boost_model$results[10] %>% unname() %>% unlist(),
-  #  "Mean_F1" = boost_model$results[12] %>% unname() %>% unlist(),
-  #  "Kappa" = boost_model$results[11] %>% unname() %>% unlist(),
-  #  "AUC" = boost_model$results[8] %>% unname() %>% unlist()
-  #)) %>% as.yaml() %>% write("train_model.yaml")
-    boost_model$results[c(8,10,11,12)] %>% as.yaml() %>% write("metrics/train_model.yaml")
+  boost_model$results[c(8,10,11,12)] %>% as.yaml() %>% write("metrics/train_model.yaml")
+  ## Save predictions results
+  results<-predict_activity(boost_model,dataset)
+  #write_csv(results$cm %>% as.data.frame() %>% tibble::rownames_to_column("class"), "metrics/train_model_cm.csv")
+  write_csv(data.frame(predicted=results$predictions,observed=dataset$Activity),"metrics/train_model_predictions.csv")
+  ## save metrics per class
+  results$cm %>% as.data.frame() %>% tibble::rownames_to_column("Activity") %>% 
+    filter(Activity=="Class: G") %>% 
+    select("Sensitivity","Specificity","Balanced Accuracy") %>%
+    as.yaml() %>% 
+    write("metrics/train_model_metrics_G.yaml")
+  
+  results$cm %>% as.data.frame() %>% tibble::rownames_to_column("Activity") %>% 
+    filter(Activity =="Class: GM") %>% 
+    select("Sensitivity","Specificity","Balanced Accuracy") %>%
+    as.yaml() %>% 
+    write("metrics/train_model_metrics_GM.yaml")
+  
+  results$cm %>% as.data.frame() %>% tibble::rownames_to_column("Activity") %>% 
+    filter(Activity =="Class: W") %>% 
+    select("Sensitivity","Specificity","Balanced Accuracy") %>%
+    as.yaml() %>% 
+    write("metrics/train_model_metrics_W.yaml")
+  
+  results$cm %>% as.data.frame() %>% tibble::rownames_to_column("Activity") %>% 
+    filter(Activity =="Class: R") %>% 
+    select("Sensitivity","Specificity","Balanced Accuracy") %>%
+    as.yaml() %>% 
+    write("metrics/train_model_metrics_R.yaml")
+  
   }

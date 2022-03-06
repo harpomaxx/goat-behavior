@@ -1,8 +1,8 @@
 #!/bin/Rscript
 #  prepare dataset for for classification algorithms.
 
-source("code/R/scripts/create_numeric_features.R")
-source("code/R/scripts/create_lag_features.R")
+source("code/R/functions/create_numeric_features.R")
+source("code/R/functions/create_lag_features.R")
 suppressPackageStartupMessages(library(optparse))
 
 #### MAIN 

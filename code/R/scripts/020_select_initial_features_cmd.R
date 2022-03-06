@@ -2,7 +2,7 @@
 #  select initial features
 
 
-source("code/R/scripts/select_initial_features.R")
+source("code/R/functions/select_initial_features.R")
 suppressPackageStartupMessages(library(optparse))
 
 #### MAIN 

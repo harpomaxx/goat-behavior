@@ -2,7 +2,7 @@
 #  separate into two datasets (namely train and test datasets)
 # trainset is used for feature  analysis and test for LOOCV results
 
-source("code/R/scripts/separate_dataset.R")
+source("code/R/functions/separate_dataset.R")
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
