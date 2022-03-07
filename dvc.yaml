@@ -59,6 +59,7 @@ stages:
       --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv --model models/boost/seba-caprino
     deps:
     - code/R/scripts/050_train_model_cmd.R
+    - code/R/functions/caret_params.R
     - code/R/functions/train_model.R
     - data/split/seba-caprino_features.tsv
     - data/topnfeatures/seba-caprino_selected_features.tsv
@@ -77,4 +78,29 @@ stages:
     - metrics/train_model_metrics_W.yaml:
         cache: false
     - metrics/train_model_metrics_R.yaml:
+        cache: false
+        
+  train_model_loocv:
+    cmd: Rscript code/R/scripts/060_train_model_loocv_cmd.R --input data/split/seba-caprino_features.tsv 
+      --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv --results models/loocv/seba-caprino
+    deps:
+    - code/R/scripts/060_train_model_loocv_cmd.R
+    - code/R/functions/caret_params.R
+    - code/R/functions/train_model_loocv.R
+    - data/split/seba-caprino_features.tsv
+    - data/topnfeatures/seba-caprino_selected_features.tsv
+    outs:
+    - models/loocv
+    metrics:
+    - metrics/train_model_loocv_metrics_R.yaml:
+        cache: false
+    - metrics/train_model_loocv_metrics_W.yaml:
+        cache: false
+    - metrics/train_model_loocv_metrics_G.yaml:
+        cache: false
+    - metrics/train_model_loocv_metrics_GM.yaml:
+        cache: false
+    - metrics/train_model_loocv_metrics_overall.yaml:
+        cache: false
+    - metrics/train_model_loocv_metrics_micro.yaml:
         cache: false

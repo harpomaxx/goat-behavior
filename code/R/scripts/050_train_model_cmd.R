@@ -64,9 +64,13 @@ if (opt$input %>% is.null()  ||
   #  as.yaml() %>% write("metrics/train_model.yaml")
   
   ## Save resample metrics
-  boost_model$resample %>% select(Accuracy,AUC) %>% 
-    summarise(mean_AUC=mean(AUC),sd_AUC=sd(AUC), 
-              mean_Acc=mean(Accuracy),sd_Acc=sd(Accuracy)) %>%
+  boost_model$resample %>% select(Accuracy,AUC,Mean_Sensitivity, Mean_Specificity,Mean_Balanced_Accuracy) %>% 
+    summarise(#mean_AUC=mean(AUC),sd_AUC=sd(AUC), 
+              #mean_Acc=mean(Accuracy,na.rm = TRUE),sd_BAcc=sd(Accuracy,na.rm = TRUE),
+              mean_BAcc=mean(Mean_Balanced_Accuracy,na.rm = TRUE),sd_BAcc=sd(Mean_Balanced_Accuracy,na.rm = TRUE),
+              mean_Sens=mean(Mean_Sensitivity,na.rm = TRUE),sd_Sens=sd(Mean_Sensitivity,na.rm = TRUE),
+              mean_Spec=mean(Mean_Specificity,na.rm = TRUE),sd_Spec=sd(Mean_Specificity,na.rm = TRUE)
+              ) %>%
     as.yaml() %>% write("metrics/train_model_resample.yaml")
   
   

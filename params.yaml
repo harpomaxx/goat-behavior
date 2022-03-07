@@ -1,5 +1,5 @@
 select_features_boruta:
-  maxnfeat: 20
+  maxnfeat: 40
   numsamp: 30
   
 separate_dataset:
