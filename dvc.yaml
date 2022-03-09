@@ -1,0 +1,106 @@
+stages:
+  prepare_dataset:
+    cmd: Rscript code/R/scripts/010_prepare_dataset_cmd.R --input rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
+      --output data/preprocessed/seba-caprino-preprocessed.tsv
+    deps:
+    - code/R/scripts/010_prepare_dataset_cmd.R
+    - code/R/functions/create_numeric_features.R
+    - code/R/functions/create_lag_features.R
+    - rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
+    outs:
+    - data/preprocessed
+    
+  select_features_initial:
+    cmd: Rscript code/R/scripts/020_select_features_initial_cmd.R --input data/preprocessed/seba-caprino-preprocessed.tsv
+      --output data/initial_features/seba-caprino-preprocessed-initial-features.tsv 
+    deps:
+    - code/R/functions/select_features_initial.R
+    - code/R/scripts/020_select_features_initial_cmd.R
+    - data/preprocessed/seba-caprino-preprocessed.tsv
+    metrics:
+    - metrics/select_features_initial.yaml:
+       cache: false
+    outs:
+    - data/initial_features
+    
+  separate_dataset:
+    cmd: Rscript code/R/scripts/030_separate_dataset_cmd.R --input data/initial_features/seba-caprino-preprocessed-initial-features.tsv 
+      --output data/split/seba-caprino
+    deps:
+    - code/R/scripts/030_separate_dataset_cmd.R
+    - code/R/functions/separate_dataset.R
+    - data/initial_features/seba-caprino-preprocessed-initial-features.tsv 
+    outs:
+    - data/split
+    params:
+    - separate_dataset.excluded_anim
+    metrics:
+    - metrics/separate_dataset.yaml:
+        cache: false
+    
+  select_features_boruta:
+    cmd: Rscript code/R/scripts/040_select_features_boruta_cmd.R --input data/split/seba-caprino_features.tsv 
+      --output data/topnfeatures/seba-caprino
+    deps:
+    - code/R/scripts/040_select_features_boruta_cmd.R
+    - code/R/functions/select_features_boruta.R
+    - data/split/seba-caprino_features.tsv  
+    metrics:
+    - metrics/select_features_boruta.yaml:
+        cache: false
+    params:
+    - select_features_boruta.maxnfeat
+    - select_features_boruta.numsamp
+    outs:
+    - data/topnfeatures
+    
+  train_model:
+    cmd: Rscript code/R/scripts/050_train_model_cmd.R --input data/split/seba-caprino_features.tsv 
+      --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv --model models/boost/seba-caprino
+    deps:
+    - code/R/scripts/050_train_model_cmd.R
+    - code/R/functions/caret_params.R
+    - code/R/functions/train_model.R
+    - data/split/seba-caprino_features.tsv
+    - data/topnfeatures/seba-caprino_selected_features.tsv
+    outs:
+    - models/boost
+    plots:
+    - metrics/train_model_predictions.csv:
+        cache: false
+    metrics:
+    - metrics/train_model_resample.yaml:
+        cache: false
+    - metrics/train_model_metrics_G.yaml:
+        cache: false
+    - metrics/train_model_metrics_GM.yaml:
+        cache: false
+    - metrics/train_model_metrics_W.yaml:
+        cache: false
+    - metrics/train_model_metrics_R.yaml:
+        cache: false
+        
+  train_model_loocv:
+    cmd: Rscript code/R/scripts/060_train_model_loocv_cmd.R --input data/split/seba-caprino_features.tsv 
+      --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv --results models/loocv/seba-caprino
+    deps:
+    - code/R/scripts/060_train_model_loocv_cmd.R
+    - code/R/functions/caret_params.R
+    - code/R/functions/train_model_loocv.R
+    - data/split/seba-caprino_features.tsv
+    - data/topnfeatures/seba-caprino_selected_features.tsv
+    outs:
+    - models/loocv
+    metrics:
+    - metrics/train_model_loocv_metrics_R.yaml:
+        cache: false
+    - metrics/train_model_loocv_metrics_W.yaml:
+        cache: false
+    - metrics/train_model_loocv_metrics_G.yaml:
+        cache: false
+    - metrics/train_model_loocv_metrics_GM.yaml:
+        cache: false
+    - metrics/train_model_loocv_metrics_overall.yaml:
+        cache: false
+    - metrics/train_model_loocv_metrics_micro.yaml:
+        cache: false

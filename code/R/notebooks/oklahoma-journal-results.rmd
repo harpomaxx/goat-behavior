@@ -67,22 +67,22 @@ data_caprino_ok<-act_timeseries %>% arrange(epoch) %>% group_by(Anim) %>%
   mutate(
       prev_Active1=lag(Active, order_by=Anim,n=1, default=0),
       prev_Active2=lag(Active, order_by=Anim,n = 2, default=0 ),
-      #prev_Active3=lag(Active, order_by=Anim,n = 3, default=0 )
+      prev_Active3=lag(Active, order_by=Anim,n = 3, default=0 )
       ) %>% 
    mutate(
       prev_Standing1=lag(Standing, order_by=Anim,n=1, default=0),
       prev_Standing2=lag(Standing, order_by=Anim,n = 2, default=0 ),
-      #prev_Standing3=lag(Standing, order_by=Anim,n = 3, default=0 )
+      prev_Standing3=lag(Standing, order_by=Anim,n = 3, default=0 )
       ) %>%
    mutate(
       prev_Lying1=lag(Lying, order_by=Anim,n=1, default=0),
       prev_Lying2=lag(Lying, order_by=Anim,n = 2, default=0 ),
-      #prev_Lying3=lag(Lying, order_by=Anim,n = 3, default=0 )
+      prev_Lying3=lag(Lying, order_by=Anim,n = 3, default=0 )
       ) %>%
      mutate(
       prev_steps1=lag(Steps, order_by=Anim,n=1, default=0),
       prev_steps2=lag(Steps, order_by=Anim,n = 2, default=0 ),
-      #prev_steps3=lag(Steps, order_by=Anim,n = 3, default=0 )
+      prev_steps3=lag(Steps, order_by=Anim,n = 3, default=0 )
       )
 ```
 
@@ -130,6 +130,7 @@ names(data_caprino_ok_numeric) %>% as.data.frame()
 
 
 # FEATURE ENGINEERING
+
 
 ## Creating new variables according to several papers
 ```{r}
@@ -180,32 +181,62 @@ data_caprino_ok_numeric <- data_caprino_ok_numeric %>% select(#-`distance(m)`,
 
 ```
 ## BORUTA selecting Animals 
+
+We use ~40% of the dataset for selecting features using BORUTA algorithm. 
+Four animals were removed.
+
 ```{r}
 data_caprino_ok_numeric %>% group_by(Anim) %>% summarise(n=n())
 train_dataset_boruta<- data_caprino_ok_numeric  %>% 
   tibble::add_column(Activity=as.factor(data_caprino_ok$Activity))
 
-data_caprino_ok_numeric_w_classes<- train_dataset_boruta %>% filter(!(Anim %in% c(1553,1635,505081,505075) ))
-train_dataset_boruta<- train_dataset_boruta %>% filter(Anim %in% c(1553,1635,505081,505075) )  %>% select(-Anim)
+data_caprino_ok_numeric_w_classes<- train_dataset_boruta %>% filter(!(Anim %in% c(1553,1635,1779,505081,505075,505080) ))
+train_dataset_boruta<- train_dataset_boruta %>% filter((Anim %in% c(1553,1635,1779,505081,505075,505080) ))  %>% select(-Anim)
 train_dataset_boruta %>% group_by(Activity) %>% summarise(n=n())
 data_caprino_ok_numeric_w_classes %>% group_by(Activity) %>% summarise(n=n())
+
+#data_caprino_ok_numeric$Anim %>% unique()
+```
+
+## Bootstraping
+
+```{r}
+resamples<-rsample::bootstraps(train_dataset_boruta,strata = Activity,times = 30  )
 ```
 
 
 ## Using BORUTA for Feature Selection
 
-We use ~25% of the dataset for selecting features using BORUTA algorithm. 
-Four animals were removed.
 
+### Select TOP N features
 ```{r}
-num_of_feat<-10
-var_importance_boruta<-Boruta(Activity ~ . ,data=train_dataset_boruta %>% na.omit())
-var_importance_boruta<-attStats(var_importance_boruta) %>% filter(decision=='Confirmed') %>% select(meanImp) %>% arrange(desc(meanImp)) %>% top_n(num_of_feat)
-var_importance_boruta<-var_importance_boruta %>% tibble::rownames_to_column('variable')
-var_importance_boruta_final<-apply(var_importance_boruta$variable %>% t() ,2, function(x) stringr::str_replace_all(x, pattern="`",replacement = "")) %>% as.data.frame()
-names(var_importance_boruta_final)<-"variable"
-var_importance_boruta
+source("../scripts/select_features_boruta.R")
+library(doMC)
+registerDoMC(cores = 4)
+library(rsample)
+var_importance <- foreach(i = 1:length(resamples$splits), .combine = rbind) %dopar% {
+  trainset<- rsample::analysis(resamples$splits[[i]])
+  partial<-select_features_boruta(trainset, "Activity",40)
+  partial<-cbind(partial,rsample=i)
+}  
+
+var_always_present<-var_importance %>% group_by(variable) %>% summarise(n=n()) %>% filter(n==30) %>% ungroup() %>% select(variable)
+v<-var_always_present %>% unlist() %>% unname()
+
+
+
+var_importance_boruta_final<- var_importance %>% filter(variable %in% v) %>% group_by(variable) %>% summarise(grandmeanImp=mean(meanImp)) %>% arrange(grandmeanImp %>% desc()) %>% ungroup() %>% select(variable)
+
+var_importance_boruta_final <-
+    apply(var_importance_boruta_final$variable %>% t() , 2,
+          function(x)
+            stringr::str_replace_all(x,
+                                     pattern = "`",
+                                     replacement = "")) %>% as.data.frame()
+names(var_importance_boruta_final) <- "variable"
+var_importance_boruta_final
 ```
+
 
 # MODELS
 ## Macro and Micro metrics
@@ -257,6 +288,53 @@ ctrl_fast <- trainControl(
 )
 ```
 
+## Grid Search parameters
+
+```{r}
+ grid <- expand.grid(
+    depth = c(4),
+    learning_rate = c(0.05),
+    #iterations = c(10,50,100,500,1000),
+    iterations = c(1000),
+    l2_leaf_reg = c(3.0),
+    #regularization parameter
+    rsm = c(1),
+    # percentage of features to use at each split selection
+    border_count = c(64)
+  )
+```
+
+## Boost Boruta Dataset
+
+```{r}
+
+  boost_val_dataset_feature_selection <- train_dataset_boruta %>% sample_frac(.2)
+  trainset_dataset_feature_selection <- setdiff(train_dataset_boruta, boost_val_dataset_feature_selection)
+  
+  selected_variables <- var_importance_boruta_final 
+  boostFit_boruta <- caret::train(
+    x = trainset_dataset_feature_selection %>%
+      select(selected_variables$variable) %>%  na.omit() %>% as.data.frame(),
+    y = trainset_dataset_feature_selection %>%  select(Activity) %>% unlist() %>% unname()  %>% as.factor(),
+    method = catboost::catboost.caret,
+    tuneGrid = grid,
+    metric = 'logLoss',
+    verbose = 0,
+    trControl = ctrl_fast,
+    auto_class_weights = "Balanced",
+    use_best_model = TRUE,
+    od_type = 'Iter',
+    test_pool = catboost.load_pool(
+      boost_val_dataset_feature_selection %>%
+        select(selected_variables$variable) %>%  na.omit() %>% as.data.frame(),
+      label = as.numeric(as.factor(boost_val_dataset_feature_selection$Activity)) -
+        1
+    )
+  )
+boostFit_boruta
+```
+
+
 ## Boost LOOCV
 
 ```{r message=FALSE}
@@ -289,17 +367,7 @@ for (i in seq(1, length(n_anim))) {
   #filter(variable!="DBL2") %>%
   #filter(variable!="X_Actlog")
   
-  grid <- expand.grid(
-    depth = c(4),
-    learning_rate = c(0.05),
-    #iterations = c(10,50,100,500,1000),
-    iterations = c(1000),
-    l2_leaf_reg = c(3.0),
-    #regularization parameter
-    rsm = c(1),
-    # percentage of features to use at each split selection
-    border_count = c(64)
-  )
+ 
   
   boostFit <- caret::train(
     x = train_dataset_loocv %>%
@@ -343,6 +411,8 @@ for (i in seq(1, length(n_anim))) {
       )
 }
 ```
+
+
 # RESULTS
 ```{r}
 overall<-lapply(loocv_results,function(x) x$overall %>% t() %>% 
