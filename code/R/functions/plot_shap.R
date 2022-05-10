@@ -1,0 +1,46 @@
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+
+range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+
+shap_summary_plot<-function(shap_values){
+  summary_plot <-
+    shap_values %>% reshape2::melt() %>% group_by(class, variable) %>% 
+    summarise(mean = mean(abs(value))) %>% 
+    arrange(desc(mean)) %>%
+    ggplot() +
+    ggdark::dark_theme_classic() +
+    geom_col(aes(
+      y = variable,
+      x = mean,
+      group = class,
+      fill = class
+    ), position = "stack") +
+    xlab("Mean(|Shap Value|) Average impact on model output magnitude")
+  summary_plot
+  
+}
+
+shap_beeswarm_plot<-function(shap_values,dataset){
+  
+  shap_values <- shap_values %>% reshape2::melt()
+  dataset<-dataset %>% mutate(class=Activity) %>% select(-Activity) %>% 
+    reshape2::melt() %>% group_by(variable) %>% 
+    mutate(value_scale=range01(value))
+  
+  beeswarm_plot<-cbind(shap_values, feature_value=dataset$value_scale) %>% # filter(class=="GM") %>%
+    ggplot()+
+    facet_wrap(~class)+
+    #ggdark::dark_theme_bw()+
+    theme_classic()+
+    geom_hline(yintercept=0, 
+               color = "red", size=0.5)+
+    ggforce::geom_sina(aes(x=variable,y=value,color=feature_value),size=2.2,bins=4,alpha=0.9,shape=15)+
+    scale_colour_gradient(low = "yellow", high = "red", na.value = NA)+
+    scale_colour_gradient(low = "skyblue", high = "orange", na.value = NA)+
+    xlab("Feature")+ylab("SHAP value")+
+    theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+  beeswarm_plot
+  
+  
+}

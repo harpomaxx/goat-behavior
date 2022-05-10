@@ -55,13 +55,13 @@ stages:
     - data/topnfeatures
     
   train_model:
-    cmd: Rscript code/R/scripts/050_train_model_cmd.R --input data/split/seba-caprino_features.tsv 
+    cmd: Rscript code/R/scripts/050_train_model_cmd.R --input data/split/seba-caprino_loocv.tsv
       --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv --model models/boost/seba-caprino
     deps:
     - code/R/scripts/050_train_model_cmd.R
     - code/R/functions/caret_params.R
     - code/R/functions/train_model.R
-    - data/split/seba-caprino_features.tsv
+    - data/split/seba-caprino_loocv.tsv
     - data/topnfeatures/seba-caprino_selected_features.tsv
     outs:
     - models/boost
@@ -81,13 +81,13 @@ stages:
         cache: false
         
   train_model_loocv:
-    cmd: Rscript code/R/scripts/060_train_model_loocv_cmd.R --input data/split/seba-caprino_features.tsv 
+    cmd: Rscript code/R/scripts/060_train_model_loocv_cmd.R --input data/split/seba-caprino_loocv.tsv
       --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv --results models/loocv/seba-caprino
     deps:
     - code/R/scripts/060_train_model_loocv_cmd.R
     - code/R/functions/caret_params.R
     - code/R/functions/train_model_loocv.R
-    - data/split/seba-caprino_features.tsv
+    - data/split/seba-caprino_loocv.tsv
     - data/topnfeatures/seba-caprino_selected_features.tsv
     outs:
     - models/loocv
@@ -104,3 +104,40 @@ stages:
         cache: false
     - metrics/train_model_loocv_metrics_micro.yaml:
         cache: false
+        
+  calculate_shap:
+    cmd: Rscript code/R/scripts/070_calculate_shap_cmd.R 
+      --input data/split/seba-caprino_features.tsv 
+      --model models/boost/seba-caprino_model.rds 
+      --output data/shap/shap_values.tsv 
+      --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv
+    deps:   
+    - code/R/functions/calculate_shap.R
+    - code/R/scripts/070_calculate_shap_cmd.R
+    - data/topnfeatures/seba-caprino_selected_features.tsv 
+    - data/split/seba-caprino_features.tsv
+    - models/boost/seba-caprino_model.rds
+    outs:
+    - data/shap
+    params:
+    - calculate_shap.nsim
+    
+  plot_shap:
+    cmd: Rscript code/R/scripts/075_plot_shap_cmd.R 
+      --input data/split/seba-caprino_features.tsv 
+      --shapvalues data/shap/shap_values.tsv 
+      --output images/shap
+      --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv
+    deps:   
+    - code/R/scripts/070_calculate_shap_cmd.R
+    - code/R/scripts/075_plot_shap_cmd.R
+    - code/R/functions/calculate_shap.R
+    - code/R/functions/plot_shap.R
+    - data/topnfeatures/seba-caprino_selected_features.tsv 
+    - data/split/seba-caprino_features.tsv
+    - data/shap/shap_values.tsv
+    outs:
+    - images/shap
+    
+        
+    

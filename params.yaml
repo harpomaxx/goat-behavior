@@ -1,12 +1,15 @@
 select_features_boruta:
-  maxnfeat: 40
+  maxnfeat: 25
   numsamp: 30
-  
+
 separate_dataset:
-  excluded_anim: 
-    - 1553
-    - 1635
-    - 1779
-    - 505081
-    - 505075 
-    - 505080
+  excluded_anim:
+  - 1553
+  - 1635
+  - 1779
+  - 505081
+  - 505075
+  - 505080
+  
+calculate_shap:
+   nsim: 10

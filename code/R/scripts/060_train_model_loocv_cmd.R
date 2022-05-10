@@ -94,7 +94,7 @@ if (opt$input %>% is.null()  ||
     write("metrics/train_model_loocv_metrics_overall.yaml")
   
   metrics$micro %>% as.yaml %>%
-    write("metrics/train_model_loocv_metrics_micro.yaml")
+  write("metrics/train_model_loocv_metrics_micro.yaml")
   
     
   

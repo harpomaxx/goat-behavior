@@ -3,6 +3,18 @@ suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(tibble))
 suppressPackageStartupMessages(library(catboost))
 source("code/R/functions/caret_params.R")
+
+
+#' Train a model using caret. 
+#'
+#' @param dataset a dataset with goat-behavior information
+#' @param selected_variables  a list of selected variables 
+#' @param gridsearch 
+#'
+#' @return a caret model
+#' @export
+#'
+#' @examples
 train_model <- function(dataset, selected_variables, gridsearch=NULL) {
   set.seed(19091974) 
  
@@ -37,6 +49,15 @@ train_model <- function(dataset, selected_variables, gridsearch=NULL) {
 }
 
 
+#' Title
+#'
+#' @param model 
+#' @param dataset 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 predict_activity<-function(model,dataset){
 
   predictions<-predict(model,dataset)  
