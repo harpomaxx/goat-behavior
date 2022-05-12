@@ -5,7 +5,6 @@ suppressPackageStartupMessages(library(doMC))
 
 registerDoMC(cores = 10)
 
-range01 <- function(x){(x-min(x))/(max(x)-min(x))}
 
 p_function_G <-
   function(object, newdata)

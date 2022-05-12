@@ -22,7 +22,7 @@ library(lubridate)
 ## Loading ABDEL+MIMOSA Dataset
 
 ```{r}
-data_caprino_ok<-readr::read_delim("../../../data/seba-caprino-feature-enginering - Sebastian_Abdel_Final_Data_dist.tsv",col_types = cols(),delim='\t')
+data_caprino_ok<-readr::read_delim("../../../rawdata/seba-caprino-feature-engineering-seba-abdel.tsv",col_types = cols(),delim='\t')
 data_caprino_ok$Anim <- as.factor(data_caprino_ok$Anim)
 data_caprino_ok$collar <- as.factor(data_caprino_ok$collar)
 data_caprino_ok$Tag <- as.factor(data_caprino_ok$Tag)
@@ -210,7 +210,7 @@ resamples<-rsample::bootstraps(train_dataset_boruta,strata = Activity,times = 30
 
 ### Select TOP N features
 ```{r}
-source("../scripts/select_features_boruta.R")
+source("../functions/select_features_boruta.R")
 library(doMC)
 registerDoMC(cores = 4)
 library(rsample)
@@ -255,7 +255,6 @@ metrics <- function(cm,preds,testset) {
   mm <- cbind(c(macro_metrics), c(micro_metrics))
   data.frame(macro = mm[, 1], micro = mm[, 2])
 }
-
 ```
 
 ## Create LOOCV samples
@@ -431,5 +430,4 @@ do.call(rbind, byclass) %>% as.data.frame() %>%
   group_by(class) %>% 
   summarise(mean = mean(Recall, na.rm =TRUE), sd=sd(Recall, na.rm=TRUE)
             )
-
 ```

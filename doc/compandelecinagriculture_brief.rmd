@@ -82,4 +82,4 @@ Show a couple of tables withe the features selected by BORUTA
 
 ## Discussion
 
-THe idea is to use SHAP values results for the best model to analize and disccuss the quality of the features
+THe idea is to use SHAP values results for the best model to analyze and discuss the quality of the features

@@ -2,6 +2,50 @@ select_features_boruta:
   maxnfeat: 25
   numsamp: 30
 
+select_initial:
+  features:
+  - Anim
+  - Standing
+  - Active
+  - Lying
+  - Steps
+  - distance(m)
+  - X_Act
+  - Y_Act
+  - "%HeadDown"
+  - DFL1
+  - DFL2
+  - DFL3
+  - DFA12
+  - DFA123
+  - DBL1
+  - DBL2
+  - DBL3
+  - DBA12
+  - DBA123
+  - DiffXY
+  - MeanXY
+  - VarXY
+  - X_Actlog
+  - Y_Actlog
+  - Stepslog
+  - distance(m)log
+  - VarXYlog
+  - DiffXYlog
+  - MeanXYlog
+  - prev_Active1
+  - prev_Active2
+  - prev_Active3
+  - prev_Standing1
+  - prev_Standing2
+  - prev_Standing3
+  - prev_Lying1
+  - prev_Lying2
+  - prev_Lying3
+  - prev_steps1
+  - prev_steps2
+  - prev_steps3
+
 separate_dataset:
   excluded_anim:
   - 1553
@@ -10,6 +54,6 @@ separate_dataset:
   - 505081
   - 505075
   - 505080
-  
+
 calculate_shap:
-   nsim: 10
+  nsim: 10

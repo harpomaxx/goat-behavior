@@ -17,6 +17,8 @@ stages:
     - code/R/functions/select_features_initial.R
     - code/R/scripts/020_select_features_initial_cmd.R
     - data/preprocessed/seba-caprino-preprocessed.tsv
+    params:
+    - select_initial.features
     metrics:
     - metrics/select_features_initial.yaml:
        cache: false

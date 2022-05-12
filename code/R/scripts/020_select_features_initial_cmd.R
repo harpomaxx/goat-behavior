@@ -19,9 +19,15 @@ if (opt$input %>% is.null() || opt$output %>% is.null()){
   quit()
 }else{
   
+  ## Set default parameters
+  params <- yaml::read_yaml("params.yaml")
+  if(!  "select_initial" %in% names(params)) { 
+    message("[] Error: No information for selecting features.")
+    quit()
+  }
   ## Select features
   dataset <- readr::read_delim(opt$input, col_types = cols(), delim = '\t')
-  dataset <- select_initial_features(dataset)
+  dataset <- select_initial_features(dataset,params$select_initial$features)
   ## Save dataset
   dir.create(dirname(opt$output), showWarnings = FALSE)
   readr::write_delim(dataset, file = opt$output, delim = '\t')

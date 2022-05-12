@@ -9,7 +9,8 @@ shap_summary_plot<-function(shap_values){
     summarise(mean = mean(abs(value))) %>% 
     arrange(desc(mean)) %>%
     ggplot() +
-    ggdark::dark_theme_classic() +
+   # ggdark::dark_theme_classic() +
+    theme_classic()+
     geom_col(aes(
       y = variable,
       x = mean,
