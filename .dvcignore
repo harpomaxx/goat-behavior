@@ -1,3 +1,9 @@
 # Add patterns of files dvc should ignore, which could improve
 # the performance. Learn more at
 # https://dvc.org/doc/user-guide/dvcignore
+params-basic.py
+params-no-lags.py
+params-no-logs.py
+params-only-lags.py
+params-only-logs.py
+goat-behavior.Rproj

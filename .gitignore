@@ -5,3 +5,9 @@
 /data
 /select_features_boruta.yaml
 /separate_train_test.yaml
+params-basic.py
+params-no-lags.py
+params-no-logs.py
+params-only-lags.py
+params-only-logs.py
+goat-behavior.Rproj

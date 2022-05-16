@@ -9,10 +9,7 @@ select_initial:
   - Active
   - Lying
   - Steps
-  - distance(m)
-  - X_Act
-  - Y_Act
-  - "%HeadDown"
+  - '%HeadDown'
   - DFL1
   - DFL2
   - DFL3
@@ -23,16 +20,21 @@ select_initial:
   - DBL3
   - DBA12
   - DBA123
-  - DiffXY
-  - MeanXY
-  - VarXY
   - X_Actlog
   - Y_Actlog
+  - X_Act
+  - Y_Act
   - Stepslog
+  - Steps
   - distance(m)log
+  - distance(m)
   - VarXYlog
   - DiffXYlog
   - MeanXYlog
+  - VarXY
+  - DiffXY
+  - MeanXY
+  - prev_Active1
   - prev_Active1
   - prev_Active2
   - prev_Active3
@@ -45,7 +47,6 @@ select_initial:
   - prev_steps1
   - prev_steps2
   - prev_steps3
-
 separate_dataset:
   excluded_anim:
   - 1553

@@ -50,9 +50,9 @@ create_numeric_features <- function(dataset) {
   dataset <-
     dataset %>% mutate(DiffXY = abs(X_Act - Y_Act))
   dataset <-
-    dataset %>% rowwise() %>% mutate(MeanXY = mean(c(X_Act, Y_Act)))
+    dataset %>% rowwise() %>% mutate(MeanXY = mean(c(X_Act, Y_Act))) %>% ungroup()
   dataset <-
-    dataset %>% rowwise() %>% mutate(VarXY = sd(c(X_Act, Y_Act)))
+    dataset %>% rowwise() %>% mutate(VarXY = sd(c(X_Act, Y_Act))) %>% ungroup()
   
   # Scale distance and steps
   range01 <- function(x){(x-min(x))/(max(x)-min(x))}
