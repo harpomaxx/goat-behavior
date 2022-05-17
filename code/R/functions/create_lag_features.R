@@ -97,6 +97,26 @@ create_lag_features <- function(dataset) {
         order_by = Anim,
         n = 3,
         default = 0
+      ) 
+    ) %>%
+    mutate(
+      prev_headdown1 = lag(
+        `%HeadDown`,
+        order_by = Anim,
+        n = 1,
+        default = 0
+      ),
+      prev_headdown2 = lag(
+        `%HeadDown`,
+        order_by = Anim,
+        n = 2,
+        default = 0
+      ),
+      prev_headdown3 = lag(
+        `%HeadDown`,
+        order_by = Anim,
+        n = 3,
+        default = 0
       )
     )
   dataset<- dataset %>% ungroup()

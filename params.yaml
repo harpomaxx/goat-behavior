@@ -47,6 +47,9 @@ select_initial:
   - prev_steps1
   - prev_steps2
   - prev_steps3
+  - prev_headdown1
+  - prev_headdown2
+  - prev_headdown3
 separate_dataset:
   excluded_anim:
   - 1553

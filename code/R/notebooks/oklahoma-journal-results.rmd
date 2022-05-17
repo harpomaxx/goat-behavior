@@ -83,7 +83,34 @@ data_caprino_ok<-act_timeseries %>% arrange(epoch) %>% group_by(Anim) %>%
       prev_steps1=lag(Steps, order_by=Anim,n=1, default=0),
       prev_steps2=lag(Steps, order_by=Anim,n = 2, default=0 ),
       prev_steps3=lag(Steps, order_by=Anim,n = 3, default=0 )
+      ) %>%
+    mutate(
+      prev_headdown1 = lag(
+        `%HeadDown`,
+        order_by = Anim,
+        n = 1,
+        default = 0
+      ),
+      prev_headdown2 = lag(
+        `%HeadDown`,
+        order_by = Anim,
+        n = 2,
+        default = 0
+      ),
+      prev_headdown3 = lag(
+        `%HeadDown`,
+        order_by = Anim,
+        n = 3,
+        default = 0
       )
+    )
+
+act_timeseries %>% filter(Anim=="1553") %>% mutate(prev_headdown1 = lag(
+        `%HeadDown`,
+       
+        n = 1,
+        default = 0
+      ))
 ```
 
 
