@@ -5,7 +5,7 @@ source("code/R/functions/select_features_boruta.R")
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(yaml))
+suppressWarnings(suppressPackageStartupMessages(library(yaml)))
 #### MAIN 
 
 option_list <- list(
@@ -48,6 +48,7 @@ if (opt$input %>% is.null() ||
   dataset <-
     readr::read_delim(opt$input, col_types = cols(), delim = '\t')
   dataset$Activity<-as.factor(dataset$Activity)
+  dataset<-dataset %>% select(-Anim)
   ## Set default parameters
   maxnfeat <- opt$maxnfeat
   numsamp <- opt$numsamp

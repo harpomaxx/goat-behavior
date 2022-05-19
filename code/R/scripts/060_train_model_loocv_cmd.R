@@ -5,7 +5,7 @@ source("code/R/functions/train_model_loocv.R")
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(yaml))
+suppressWarnings(suppressPackageStartupMessages(library(yaml)))
 
 #### MAIN 
 
@@ -45,16 +45,29 @@ if (opt$input %>% is.null()  ||
   selected_variables <-
     readr::read_delim(opt$selected_variables, col_types = cols(), delim = '\t')
   
-  ## Set default parameters
-  #params <- yaml::read_yaml("params.yaml")
-  #if(!  "separate_train_test" %in% names(params)) { 
-  #  message("[] Error: No information for excluding animals")
-  #  quit()
-  #}
   
-  results <- 
+  ## Set default parameters
+  params <- yaml::read_yaml("params.yaml")
+  if(!  "train_model" %in% names(params)) { 
+    message("[] Error: No information for training model")
+    quit()
+  }
+  
+  grid<-expand.grid(
+    depth = params$train_model$depth,
+    learning_rate = params$train_model$learning_rate,
+    iterations = params$train_model$iterations,
+    l2_leaf_reg = params$train_model$l2_leaf_reg,
+    rsm = params$train_model$rsm,
+    border_count = params$train_model$border_count
+  )
+  
+ print(grid) 
+ results <- 
     train_model_loocv(dataset = dataset,
-                        selected_variables=selected_variables)
+                        selected_variables=selected_variables,
+                        gridsearch = grid,
+                        vfrac = params$train_model$vfrac)
   
   metrics<-loocv_peformance_metrics(results)
   metrics$byclass %>% 

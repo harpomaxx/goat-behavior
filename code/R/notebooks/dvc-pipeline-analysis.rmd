@@ -1,0 +1,60 @@
+---
+title: "Pipeline analysis"
+output: html_notebook
+---
+
+```{r}
+traindata <- readr::read_delim("../../../data/split/seba-caprino_features.tsv",delim="\t")
+traindata %>% group_by(Activity) %>% count()
+```
+
+```{r}
+loocvdata <- readr::read_delim("../../../data/split/seba-caprino_loocv.tsv",delim="\t")
+loocvdata %>% group_by(Activity,Anim) %>% count()
+```
+
+## Results
+```{r}
+r<-readr::read_csv("../../../results.csv")
+names(r)<-c("exp","R","W","G","GM","ov")
+r<- r %>% filter(!is.na(exp))
+r
+```
+```{r}
+library(ztable)
+options(ztable.type="viewer")
+ztable(r %>% as.data.frame()) %>% makeHeatmap()
+```
+## selected variables
+```{r}
+selected_variables <- readr::read_csv("../../../data/topnfeatures/seba-caprino_selected_features.tsv")
+a<-selected_variables %>% arrange(variable) %>% unname() %>% unlist()
+b<-var_importance_boruta_final %>% arrange(variable) %>% unname() %>% unlist()
+
+b
+setdiff(a,b)
+```
+
+## loocv samples
+```{r}
+setwd("/home/harpo/Dropbox/ongoing-work/git-repos/goat-behavior/")
+source("code/R/functions/train_model_loocv.R")
+loocv_dataset <- readr::read_delim("data/split/seba-caprino_loocv.tsv",delim="\t")
+
+loocv_sam <- create_loocv_samples(loocv_dataset)
+loocv_sam$loocv_test[[1]]
+loocv_sam$n_anim
+
+#loocv_sample_test
+#loocv_sam$loocv_test
+```
+## Train loocv
+```{r}
+  selected_variables <- var_importance_boruta_final
+results <- 
+    train_model_loocv(dataset = loocv_dataset,
+                        selected_variables=selected_variables)
+
+results %>% loocv_peformance_metrics
+```
+

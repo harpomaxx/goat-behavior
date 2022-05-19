@@ -1,6 +1,15 @@
 select_features_boruta:
-  maxnfeat: 25
+  maxnfeat: 15
   numsamp: 30
+
+train_model:
+  depth: 4
+  learning_rate: 0.05
+  iterations: 1000
+  l2_leaf_reg: 3.5
+  rsm: 0.7
+  border_count:  64
+  vfrac: 0.2
 
 select_initial:
   features:
@@ -8,7 +17,6 @@ select_initial:
   - Standing
   - Active
   - Lying
-  - Steps
   - '%HeadDown'
   - DFL1
   - DFL2
@@ -22,18 +30,11 @@ select_initial:
   - DBA123
   - X_Actlog
   - Y_Actlog
-  - X_Act
-  - Y_Act
   - Stepslog
-  - Steps
-  - distance(m)log
   - distance(m)
   - VarXYlog
   - DiffXYlog
   - MeanXYlog
-  - VarXY
-  - DiffXY
-  - MeanXY
   - prev_Active1
   - prev_Active1
   - prev_Active2

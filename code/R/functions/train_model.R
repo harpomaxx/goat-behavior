@@ -15,11 +15,12 @@ source("code/R/functions/caret_params.R")
 #' @export
 #'
 #' @examples
-train_model <- function(dataset, selected_variables, gridsearch=NULL) {
+train_model <- function(dataset, selected_variables, gridsearch = NULL, vfrac = 0.1) {
   set.seed(19091974) 
+
  
   
-  val_dataset <- dataset %>% sample_frac(.2)
+  val_dataset <- dataset %>% sample_frac(vfrac)
   train_dataset <- setdiff(dataset, val_dataset)
   
   ## Caret
@@ -29,7 +30,7 @@ train_model <- function(dataset, selected_variables, gridsearch=NULL) {
     y = train_dataset %>%  select(Activity) %>% unlist() %>% 
       unname()  %>% as.factor(),
     method = catboost::catboost.caret,
-    tuneGrid = grid,
+    tuneGrid = gridsearch,
     metric = 'logLoss',
     verbose = 0,
     trControl = ctrl_fast,

@@ -4,7 +4,7 @@
 
 source("code/R/functions/select_features_initial.R")
 suppressPackageStartupMessages(library(optparse))
-suppressPackageStartupMessages(library(yaml))
+suppressWarnings(suppressPackageStartupMessages(library(yaml)))
 
 #### MAIN 
 

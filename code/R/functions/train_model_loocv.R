@@ -2,7 +2,7 @@ suppressPackageStartupMessages(library(caret))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(tibble))
 suppressPackageStartupMessages(library(catboost))
-suppressPackageStartupMessages(library(yardstick))
+suppressWarnings(suppressPackageStartupMessages(library(yardstick)))
 
 source("code/R/functions/caret_params.R")
 
@@ -36,7 +36,7 @@ create_loocv_samples <- function(dataset) {
                       loocv_test=loocv_sample_test)
 }
 
-train_model_loocv <- function(dataset, selected_variables, gridsearch=NULL) {
+train_model_loocv <- function(dataset, selected_variables, gridsearch=NULL,vfrac=0.1) {
   set.seed(19091974) 
   suppressPackageStartupMessages(library(doMC))
   registerDoMC(cores = 8)
@@ -52,7 +52,7 @@ train_model_loocv <- function(dataset, selected_variables, gridsearch=NULL) {
       factor(test_dataset_loocv$Activity,
              levels = levels(train_dataset_loocv$Activity))
   
-    val_dataset <- train_dataset_loocv %>% sample_frac(.2)
+    val_dataset <- train_dataset_loocv %>% sample_frac(vfrac)
     train_dataset <- setdiff(train_dataset_loocv, val_dataset)
   
     boostFit <- caret::train(
@@ -61,7 +61,7 @@ train_model_loocv <- function(dataset, selected_variables, gridsearch=NULL) {
       y = train_dataset %>%  select(Activity) %>%
         unlist() %>% unname()  %>% as.factor(),
       method = catboost::catboost.caret,
-      tuneGrid = grid,
+      tuneGrid = gridsearch,
       metric = 'logLoss',
       verbose = 0,
       trControl = ctrl_fast,
@@ -99,8 +99,8 @@ loocv_peformance_metrics<-function(loocv_results){
   overall<-lapply(loocv_results,function(x) x$overall %>% t() %>% 
                     as.data.frame() %>% 
                     select(Accuracy)) %>% unlist() %>% t() 
-  overall  %>% mean()
-  overall  %>% sd()
+ # overall  %>% mean()
+#  overall  %>% sd()
   
   byclass <- lapply(loocv_results, function(x)
     x$byclass)

@@ -65,6 +65,8 @@ stages:
     - code/R/functions/train_model.R
     - data/split/seba-caprino_loocv.tsv
     - data/topnfeatures/seba-caprino_selected_features.tsv
+    params:
+    - train_model
     outs:
     - models/boost
     plots:
@@ -91,6 +93,8 @@ stages:
     - code/R/functions/train_model_loocv.R
     - data/split/seba-caprino_loocv.tsv
     - data/topnfeatures/seba-caprino_selected_features.tsv
+    params:
+    - train_model
     outs:
     - models/loocv
     metrics:

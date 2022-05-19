@@ -18,6 +18,9 @@ library(catboost)
 library(lubridate)
 ```
 # DATA PREPARATION
+```{r}
+set.seed(19091974) 
+```
 
 ## Loading ABDEL+MIMOSA Dataset
 
@@ -203,9 +206,11 @@ data_caprino_ok_numeric <- data_caprino_ok_numeric %>% select(#-`distance(m)`,
                                                               -MeanXY,
                                                               #-tag_activity,
                                                             
-                                                              #-DOP
+                                                              -DOP,
+                                                              -DOPlog
                                                               )
 
+names(data_caprino_ok_numeric) %>% as.data.frame()
 ```
 ## BORUTA selecting Animals 
 
@@ -243,7 +248,7 @@ registerDoMC(cores = 4)
 library(rsample)
 var_importance <- foreach(i = 1:length(resamples$splits), .combine = rbind) %dopar% {
   trainset<- rsample::analysis(resamples$splits[[i]])
-  partial<-select_features_boruta(trainset, "Activity",40)
+  partial<-select_features_boruta(trainset, "Activity",20)
   partial<-cbind(partial,rsample=i)
 }  
 
@@ -261,7 +266,7 @@ var_importance_boruta_final <-
                                      pattern = "`",
                                      replacement = "")) %>% as.data.frame()
 names(var_importance_boruta_final) <- "variable"
-var_importance_boruta_final
+var_importance_boruta_final %>% arrange(variable)
 ```
 
 
@@ -298,6 +303,9 @@ for(i in seq_along(n_anim) ) {
   loocv_sample_train[[i]] <- which(data_caprino_ok_numeric_w_classes$Anim != n_anim[i])
   loocv_sample_test[[i]] <- which(data_caprino_ok_numeric_w_classes$Anim == n_anim[i])
 }
+
+loocv_sample_test[[1]]
+n_anim
 ```
 
 ## Control and Resampling setup
@@ -369,7 +377,7 @@ library(doMC)
 registerDoMC(cores = 8)
 #caret_dataset <-  cbind(data_caprino_ok_numeric,Activity=data_caprino_ok$Activity)
 caret_dataset <-  data_caprino_ok_numeric_w_classes
-
+caret_dataset <- readr::read_delim("../../../data/split/seba-caprino_loocv.tsv",delim='\t')
 loocv_results<- vector(mode = "list", length = length( n_anim))
 
 for (i in seq(1, length(n_anim))) {
@@ -396,9 +404,9 @@ for (i in seq(1, length(n_anim))) {
  
   
   boostFit <- caret::train(
-    x = train_dataset_loocv %>%
+    x = trainset_dataset %>%
       select(selected_variables$variable) %>%  na.omit() %>% as.data.frame(),
-    y = train_dataset_loocv %>%  select(Activity) %>% unlist() %>% unname()  %>% as.factor(),
+    y = trainset_dataset %>%  select(Activity) %>% unlist() %>% unname()  %>% as.factor(),
     method = catboost::catboost.caret,
     #tuneLength=5,
     tuneGrid = grid,
@@ -426,7 +434,7 @@ for (i in seq(1, length(n_anim))) {
                              select(selected_variables$variable))
   cm <-
     confusionMatrix(reference = as.factor(test_dataset_loocv$Activity), boostFit_eval)
-  metrics(cm, boostFit_eval, test_dataset_loocv)
+  #metrics(cm, boostFit_eval, test_dataset_loocv)
   
   loocv_results[[i]] <- list(
         overall = cm$overall,
@@ -436,6 +444,7 @@ for (i in seq(1, length(n_anim))) {
         model = boostFit
       )
 }
+#loocv_results
 ```
 
 

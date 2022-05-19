@@ -5,7 +5,7 @@ source("code/R/functions/plot_shap.R")
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(yaml))
+suppressWarnings(suppressPackageStartupMessages(library(yaml)))
 suppressPackageStartupMessages(library(tibble))
 suppressPackageStartupMessages(library(caret))
 
