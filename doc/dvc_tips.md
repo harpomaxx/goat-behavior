@@ -11,6 +11,10 @@ dvc exp run -n "no-log" --queue --set-param=select_initial.features="`cat params
 ## showing results
 
 ```
-dvc exp show --drop ".*" --keep ".*loo.*mean_Sen.*|Experiment"
+dvc exp show -n 2 --drop ".*" --keep ".*loo.*mean_Sen.*|Experiment"
 
+```
+
+```
+dvc repro   && dvc metrics show metrics/train_model_loocv_metrics_[RWGM]*
 ```
