@@ -2,6 +2,10 @@
 title: "Pipeline analysis"
 output: html_notebook
 ---
+```{r}
+library(dplyr)
+library(yaml)
+```
 
 ```{r}
 traindata <- readr::read_delim("../../../data/split/seba-caprino_features.tsv",delim="\t")
@@ -26,13 +30,42 @@ options(ztable.type="viewer")
 ztable(r %>% as.data.frame()) %>% makeHeatmap()
 ```
 ## selected variables
+
+### initial
+```{r}
+initial_variables <- readr::read_tsv("../../../data/split/seba-caprino_features.tsv")
+  cbind(train_dataset_boruta %>%  names()  %>% as.data.frame() %>% arrange(desc(.)),
+  initial_variables %>% select(-Anim) %>% names()  %>% as.data.frame() %>% arrange(desc(.)))
+  
+  
+  
+  
+```
+### Boruta
+
+```{r}
+source("../functions/select_features_boruta.R")
+  initial_variables$Activity<-as.factor(initial_variables$Activity)
+boruta_var<-select_maxn_features(initial_variables %>% select(-Anim),
+                                 max_num_of_feat = 20,
+                                 num_of_samp = 30)
+boruta_var
+
+train_dataset_boruta %>% select(initial_variables %>% select(-Anim) %>% names())
+
+boruta_var_notebook<-select_maxn_features(train_dataset_boruta %>% select(initial_variables %>% select(-Anim) %>% names()) ,
+                                 max_num_of_feat = 20,
+                                 num_of_samp = 30)
+```
+
+
 ```{r}
 selected_variables <- readr::read_csv("../../../data/topnfeatures/seba-caprino_selected_features.tsv")
 a<-selected_variables %>% arrange(variable) %>% unname() %>% unlist()
 b<-var_importance_boruta_final %>% arrange(variable) %>% unname() %>% unlist()
 
+a
 b
-setdiff(a,b)
 ```
 
 ## loocv samples
@@ -49,12 +82,45 @@ loocv_sam$n_anim
 #loocv_sam$loocv_test
 ```
 ## Train loocv
+
 ```{r}
-  selected_variables <- var_importance_boruta_final
+
+setwd("/home/harpo/Dropbox/ongoing-work/git-repos/goat-behavior/")
+source("code/R/functions/train_model_loocv.R")
+loocv_dataset <- readr::read_delim("data/split/seba-caprino_loocv.tsv",delim="\t")
+
+library(yaml)
+  ## Set default parameters
+  params <- yaml::read_yaml("params.yaml")
+  if(!  "train_model" %in% names(params)) { 
+    message("[] Error: No information for training model")
+    quit()
+  }
+  
+  grid<-expand.grid(
+    depth = params$train_model$depth,
+    learning_rate = params$train_model$learning_rate,
+    iterations = params$train_model$iterations,
+    l2_leaf_reg = params$train_model$l2_leaf_reg,
+    rsm = params$train_model$rsm,
+    border_count = params$train_model$border_count
+  )
+  grid <- expand.grid(
+    depth = c(4),
+    learning_rate = c(0.05),
+    iterations = c(1000),
+    l2_leaf_reg = c(3.0),
+    rsm = c(1),
+    border_count = c(64)
+  )
+
+selected_variables <- var_importance_boruta_final
 results <- 
     train_model_loocv(dataset = loocv_dataset,
-                        selected_variables=selected_variables)
+                        selected_variables=selected_variables,gridsearch = grid,vfrac = 0.1)
 
-results %>% loocv_peformance_metrics
+loocv_results %>% loocv_peformance_metrics
+
 ```
+
 

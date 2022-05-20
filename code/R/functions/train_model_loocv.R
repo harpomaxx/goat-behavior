@@ -37,9 +37,9 @@ create_loocv_samples <- function(dataset) {
 }
 
 train_model_loocv <- function(dataset, selected_variables, gridsearch=NULL,vfrac=0.1) {
-  set.seed(19091974) 
   suppressPackageStartupMessages(library(doMC))
   registerDoMC(cores = 8)
+  set.seed(19091974) 
   samples<-create_loocv_samples(dataset) 
   loocv_results<- vector(mode = "list", length = length( samples$n_anim))
   
@@ -52,12 +52,13 @@ train_model_loocv <- function(dataset, selected_variables, gridsearch=NULL,vfrac
       factor(test_dataset_loocv$Activity,
              levels = levels(train_dataset_loocv$Activity))
   
-    val_dataset <- train_dataset_loocv %>% sample_frac(vfrac)
+    val_dataset <- train_dataset_loocv %>% sample_frac(0.1)
     train_dataset <- setdiff(train_dataset_loocv, val_dataset)
   
     boostFit <- caret::train(
       x = train_dataset %>%
-        select(selected_variables$variable) %>%  na.omit() %>% as.data.frame(),
+        select(selected_variables$variable) %>%  na.omit() %>%
+        as.data.frame(),
       y = train_dataset %>%  select(Activity) %>%
         unlist() %>% unname()  %>% as.factor(),
       method = catboost::catboost.caret,
@@ -172,8 +173,5 @@ loocv_peformance_metrics<-function(loocv_results){
                     Acc_sd = overall %>% sd()),
     micro = micro_metrics %>% as.list()
   ) 
-      
-      
-   
 }
 

@@ -1,15 +1,15 @@
 select_features_boruta:
-  maxnfeat: 15
+  maxnfeat: 20
   numsamp: 30
 
 train_model:
   depth: 4
   learning_rate: 0.05
   iterations: 1000
-  l2_leaf_reg: 3.5
-  rsm: 0.7
+  l2_leaf_reg: 3.0
+  rsm: 1
   border_count:  64
-  vfrac: 0.2
+  vfrac: 0.1
 
 select_initial:
   features:
