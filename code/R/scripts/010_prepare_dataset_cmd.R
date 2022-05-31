@@ -21,6 +21,7 @@ if (opt$input %>% is.null() || opt$output %>% is.null()){
   ## Select features
   dataset <- readr::read_delim(opt$input, col_types = cols(), delim = '\t')
   dataset <- create_numeric_features(dataset=dataset)
+  dataset <- rename_animals(dataset=dataset)
   ## Create lags 
   dataset<-create_lag_features(dataset)
   ## Save dataset

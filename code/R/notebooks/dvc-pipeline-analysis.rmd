@@ -6,15 +6,20 @@ output: html_notebook
 library(dplyr)
 library(yaml)
 ```
+```{r}
+dataset <- readr::read_delim("../../../data/preprocessed/seba-caprino-preprocessed.tsv", delim="\t")
+
+dataset %>% group_by(Anim) %>% count()
+```
 
 ```{r}
 traindata <- readr::read_delim("../../../data/split/seba-caprino_features.tsv",delim="\t")
-traindata %>% group_by(Activity) %>% count()
+traindata %>% group_by(Anim) %>% count()
 ```
 
 ```{r}
 loocvdata <- readr::read_delim("../../../data/split/seba-caprino_loocv.tsv",delim="\t")
-loocvdata %>% group_by(Activity,Anim) %>% count()
+loocvdata %>% group_by(Anim) %>% count()
 ```
 
 ## Results

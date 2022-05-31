@@ -1,0 +1,149 @@
+---
+title: "Tables and others for article"
+output: html_notebook
+---
+```{r}
+library(dplyr)
+library(tidyr)
+library(yaml)
+libr
+```
+```{r}
+dataset %>% group_by(Anim) %>% count() %>% select(Anim)
+dataset$Anim <- as.character(dataset$Anim)
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1553"), "a1"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1635"), "a2"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1636"), "a3"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1646"), "a4"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1677"), "a5"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1713"), "a6"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1779"), "a7"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505001"), "a8"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505019"), "a9"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505035"), "a10"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505048"), "a11"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505058"), "a12"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505071"), "a13"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505075"), "a14"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505080"), "a15"))
+dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505081"), "a16"))
+
+
+dataset %>% group_by(Anim) %>% count() %>% select(Anim)
+dataset %>% count()
+```
+
+## Generate dataset table
+```{r}
+library(kableExtra)
+library(ztable)
+options(ztable.type = "latex")
+dataset <-
+  readr::read_delim("../../../data/preprocessed/seba-caprino-preprocessed.tsv",
+                    delim = "\t")
+dataset_wide <-
+  dataset %>%  group_by(Anim, Activity) %>% summarise (n = n()) %>% 
+  ungroup() %>% pivot_wider(names_from = Anim,values_from = n,
+                            values_fill = 0) %>%
+  bind_rows(summarise(.,
+                      across(where(is.numeric), sum),
+                      across(where(is.character), ~ "Total"))) %>%  ungroup %>%
+  
+  
+  select(Activity, 
+        "a1",
+        "a2",
+        "a3",
+        "a4",
+        "a5",
+        "a6",
+        "a7",
+        "a8",
+        "a9",
+        "a10",
+        "a11",
+        "a12",
+        "a13",
+        "a14",
+        "a15",
+        "a16")
+dataset_wide <- dataset_wide %>% rowwise %>%
+  mutate(Total = sum(across(2:17)))  %>% ungroup %>%
+  as.data.frame() 
+ztbl<-ztable(dataset_wide)#
+
+ztbl %>% makeHeatmap(cols = 18) %>% print(caption="Table 1: Number of observations per animal discriminated by activity.")
+```
+
+## Generate DATASET A table
+```{r results='asis'}
+
+library(kableExtra)
+library(ztable)
+options(ztable.type = "latex")
+dataset <-
+  readr::read_delim("../../../data/split/seba-caprino_features.tsv",
+                    delim = "\t")
+dataset_wide <-
+  dataset %>%  group_by(Anim, Activity) %>% summarise (n = n()) %>% 
+  ungroup() %>% pivot_wider(names_from = Anim,values_from = n,
+                            values_fill = 0) %>%
+  bind_rows(summarise(.,
+                      across(where(is.numeric), sum),
+                      across(where(is.character), ~ "Total"))) %>%  ungroup %>%
+  
+    select(Activity, 
+        "a1",
+        "a2",
+        "a7",
+        "a14",
+        "a15",
+        "a16")
+
+dataset_wide <- dataset_wide %>% rowwise %>%
+  mutate(Total = sum(across(2:7)))  %>% ungroup %>%
+  as.data.frame() 
+ztable(dataset_wide) %>% makeHeatmap(cols = 8) %>%  print(caption="Table 2: Number of observations per animal discriminated by activity for Dataset A.")
+
+```
+
+## Generate DATASET B table
+```{r}
+
+library(kableExtra)
+library(ztable)
+options(ztable.type = "latex")
+dataset <-
+  readr::read_delim("../../../data/split/seba-caprino_loocv.tsv",
+                    delim = "\t")
+dataset_wide <-
+  dataset %>%  group_by(Anim, Activity) %>% summarise (n = n()) %>% 
+  ungroup() %>% pivot_wider(names_from = Anim,values_from = n,
+                            values_fill = 0) %>%
+  bind_rows(summarise(.,
+                      across(where(is.numeric), sum),
+                      across(where(is.character), ~ "Total"))) %>%  ungroup %>%
+  
+    select(Activity, 
+      
+        "a3",
+        "a4",
+        "a5",
+        "a6",
+   
+        "a8",
+        "a9",
+        "a10",
+        "a11",
+        "a12",
+        "a13"
+      )
+
+
+dataset_wide <- dataset_wide %>% rowwise %>%
+  mutate(Total = sum(across(2:11)))  %>% ungroup %>%
+  as.data.frame() 
+
+ztable(dataset_wide) %>% makeHeatmap(cols = 12) %>% print(caption="Table 3: Number of observations per animal discriminated by activity for Dataset B.")
+
+```

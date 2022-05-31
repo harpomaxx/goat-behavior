@@ -95,6 +95,41 @@ train_model_loocv <- function(dataset, selected_variables, gridsearch=NULL,vfrac
   loocv_results
 }
 
+test_model_loocv <- function(dataset, selected_variables, model) {
+  suppressPackageStartupMessages(library(doMC))
+  registerDoMC(cores = 8)
+  set.seed(19091974) 
+  samples<-create_loocv_samples(dataset) 
+  loocv_results<- vector(mode = "list", length = length( samples$n_anim))
+  
+  for (i in seq(1, length(samples$n_anim))) {
+    train_dataset_loocv <- dataset[samples$loocv_train[[i]], ]
+    train_dataset_loocv$Activity <-
+      as.factor(train_dataset_loocv$Activity)
+    test_dataset_loocv <- dataset[-samples$loocv_train[[i]], ]
+    test_dataset_loocv$Activity <-
+      factor(test_dataset_loocv$Activity,
+             levels = levels(train_dataset_loocv$Activity))
+    
+    boostFit_eval <- predict(model,
+                             test_dataset_loocv  %>%
+                               select(selected_variables$variable))
+    cm <-
+      confusionMatrix(reference = as.factor(test_dataset_loocv$Activity), boostFit_eval)
+    
+    loocv_results[[i]] <- list(
+      overall = cm$overall,
+      byclass = cm$byClass,
+      tab = cm$table,
+      predictions = boostFit_eval,
+      observations = as.factor(test_dataset_loocv$Activity),
+      model = model 
+    )
+  }
+  loocv_results
+}
+
+
 
 loocv_peformance_metrics<-function(loocv_results){
   overall<-lapply(loocv_results,function(x) x$overall %>% t() %>% 

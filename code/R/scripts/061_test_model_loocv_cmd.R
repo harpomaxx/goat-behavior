@@ -1,5 +1,5 @@
 #!/bin/Rscript
-#  separate train and test datasets
+#  test model 
 
 source("code/R/functions/train_model_loocv.R")
 suppressPackageStartupMessages(library(optparse))
@@ -41,8 +41,9 @@ opt <- parse_args(OptionParser(option_list=option_list))
 
 if (opt$input %>% is.null()  ||
     opt$selected_variables %>% is.null() ||
-    opt$model%>% is.null() ||
-    opt$results %>% is.null()) {
+    opt$model %>% is.null() ||
+    opt$results %>% is.null()
+    ) {
   message("[] Parameters missing. Please use --help for look at available parameters.")
   quit()
 } else{
@@ -55,54 +56,35 @@ if (opt$input %>% is.null()  ||
   
   ## Read model
   boost_model <- readRDS(opt$model)
-  
-  ## Set default parameters
-  params <- yaml::read_yaml("params.yaml")
-  if(!  "train_model" %in% names(params)) { 
-    message("[] Error: No information for training model")
-    quit()
-  }
-  
-  grid<-expand.grid(
-    depth = boost_model$bestTune$depth,
-    learning_rate = boost_model$bestTune$learning_rate,
-    iterations = boost_model$bestTune$iterations, 
-    l2_leaf_reg = boost_model$bestTune$l2_leaf_reg, 
-    rsm = boost_model$bestTune$rsm, 
-    border_count = boost_model$bestTune$border_count
-  )
-  
- print(grid) 
- results <- 
-    train_model_loocv(dataset = dataset,
-                        selected_variables=selected_variables,
-                        gridsearch = grid,
-                        vfrac = params$train_model$vfrac)
+  results <- 
+    test_model_loocv(dataset = dataset,
+                      selected_variables=selected_variables,
+                      model = boost_model)
   
   metrics<-loocv_peformance_metrics(results)
   metrics$byclass %>% 
     filter(class  =="Class: R") %>% 
     select("mean_Sens","mean_Spec","mean_BAcc", "sd_Sens","sd_Spec","sd_BAcc") %>%
     as.yaml() %>% 
-    write("metrics/train_model_loocv_metrics_R.yaml")
- 
+    write("metrics/test_model_loocv_metrics_R.yaml")
+  
   metrics$byclass %>% 
     filter(class  =="Class: W") %>% 
     select("mean_Sens","mean_Spec","mean_BAcc", "sd_Sens","sd_Spec","sd_BAcc") %>%
     as.yaml() %>% 
-    write("metrics/train_model_loocv_metrics_W.yaml")
+    write("metrics/test_model_loocv_metrics_W.yaml")
   
   metrics$byclass %>% 
     filter(class  =="Class: GM") %>% 
     select("mean_Sens","mean_Spec","mean_BAcc", "sd_Sens","sd_Spec","sd_BAcc") %>%
     as.yaml() %>% 
-    write("metrics/train_model_loocv_metrics_GM.yaml")
+    write("metrics/test_model_loocv_metrics_GM.yaml")
   
   metrics$byclass %>% 
     filter(class  =="Class: G") %>% 
     select("mean_Sens","mean_Spec","mean_BAcc", "sd_Sens","sd_Spec","sd_BAcc") %>%
     as.yaml() %>% 
-    write("metrics/train_model_loocv_metrics_G.yaml")
+    write("metrics/test_model_loocv_metrics_G.yaml")
   
   metrics$byclass %>% 
     select("mean_Sens","mean_Spec","mean_BAcc") %>%
@@ -112,20 +94,20 @@ if (opt$input %>% is.null()  ||
               mean_Sens=mean(mean_Sens,na.rm=TRUE),
               mean_Spec=mean(mean_Spec,na.rm=TRUE),
               mean_BAcc=mean(mean_BAcc,na.rm=TRUE)
-              ) %>%
+    ) %>%
     as.yaml() %>% 
-    write("metrics/train_model_loocv_metrics_overall.yaml")
+    write("metrics/test_model_loocv_metrics_overall.yaml")
   
   metrics$micro %>% as.yaml %>%
-  write("metrics/train_model_loocv_metrics_micro.yaml")
+    write("metrics/test_model_loocv_metrics_micro.yaml")
   
-    
+  
   
   
   ## Save model 
   dir.create(dirname(opt$results), showWarnings = FALSE)
-  saveRDS(results, file = paste0(opt$results,"_model_train_loocv_results.rds"))
+  saveRDS(results, file = paste0(opt$results,"_model_test_loocv_results.rds"))
   
   ## Save predictions results
   
-  }
+}

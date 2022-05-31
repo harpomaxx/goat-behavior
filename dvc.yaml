@@ -57,13 +57,13 @@ stages:
     - data/topnfeatures
     
   train_model:
-    cmd: Rscript code/R/scripts/050_train_model_cmd.R --input data/split/seba-caprino_loocv.tsv
+    cmd: Rscript code/R/scripts/050_train_model_cmd.R --input data/split/seba-caprino_features.tsv
       --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv --model models/boost/seba-caprino
     deps:
     - code/R/scripts/050_train_model_cmd.R
     - code/R/functions/caret_params.R
     - code/R/functions/train_model.R
-    - data/split/seba-caprino_loocv.tsv
+    - data/split/seba-caprino_features.tsv
     - data/topnfeatures/seba-caprino_selected_features.tsv
     params:
     - train_model
@@ -85,18 +85,22 @@ stages:
         cache: false
         
   train_model_loocv:
-    cmd: Rscript code/R/scripts/060_train_model_loocv_cmd.R --input data/split/seba-caprino_loocv.tsv
-      --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv --results models/loocv/seba-caprino
+    cmd: Rscript code/R/scripts/060_train_model_loocv_cmd.R 
+      --input data/split/seba-caprino_loocv.tsv
+      --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv 
+      --results models/train_loocv/seba-caprino
+      --model models/boost/seba-caprino_model.rds
     deps:
     - code/R/scripts/060_train_model_loocv_cmd.R
     - code/R/functions/caret_params.R
     - code/R/functions/train_model_loocv.R
     - data/split/seba-caprino_loocv.tsv
+    - models/boost/seba-caprino_model.rds
     - data/topnfeatures/seba-caprino_selected_features.tsv
     params:
     - train_model
     outs:
-    - models/loocv
+    - models/train_loocv
     metrics:
     - metrics/train_model_loocv_metrics_R.yaml:
         cache: false
@@ -110,6 +114,35 @@ stages:
         cache: false
     - metrics/train_model_loocv_metrics_micro.yaml:
         cache: false
+        
+  test_model_loocv:
+    cmd: Rscript code/R/scripts/061_test_model_loocv_cmd.R 
+      --input data/split/seba-caprino_loocv.tsv
+      --selected_variables data/topnfeatures/seba-caprino_selected_features.tsv 
+      --results models/test_loocv/seba-caprino 
+      --model models/boost/seba-caprino_model.rds
+    deps:
+    - code/R/scripts/061_test_model_loocv_cmd.R
+    - code/R/functions/caret_params.R
+    - code/R/functions/train_model_loocv.R
+    - data/split/seba-caprino_features.tsv
+    - models/boost/seba-caprino_model.rds
+    - data/topnfeatures/seba-caprino_selected_features.tsv
+    outs:
+    - models/test_loocv
+    metrics:
+    - metrics/test_model_loocv_metrics_R.yaml:
+        cache: false
+    - metrics/test_model_loocv_metrics_W.yaml:
+        cache: false
+    - metrics/test_model_loocv_metrics_G.yaml:
+        cache: false
+    - metrics/test_model_loocv_metrics_GM.yaml:
+        cache: false
+    - metrics/test_model_loocv_metrics_overall.yaml:
+        cache: false
+    - metrics/test_model_loocv_metrics_micro.yaml:
+        cache: false        
         
   calculate_shap:
     cmd: Rscript code/R/scripts/070_calculate_shap_cmd.R 
@@ -144,6 +177,4 @@ stages:
     - data/shap/shap_values.tsv
     outs:
     - images/shap
-    
-        
     

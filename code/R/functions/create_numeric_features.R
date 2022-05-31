@@ -73,3 +73,25 @@ create_numeric_features <- function(dataset) {
   #dataset$tag_activity<- dataset %>% select(Active,Lying,Standing) %>% 
   #   apply( MARGIN=1, FUN=which.max)# %>% as.factor()
 }
+
+rename_animals <- function(dataset){
+
+  dataset$Anim <- as.character(dataset$Anim)
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1553"), "a1"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1635"), "a2"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1636"), "a3"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1646"), "a4"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1677"), "a5"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1713"), "a6"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"1779"), "a7"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505001"), "a8"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505019"), "a9"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505035"), "a10"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505048"), "a11"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505058"), "a12"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505071"), "a13"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505075"), "a14"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505080"), "a15"))
+  dataset<- dataset %>% mutate(Anim = replace(Anim, stringr::str_detect(Anim,"505081"), "a16"))
+  dataset
+}

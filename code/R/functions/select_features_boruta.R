@@ -26,7 +26,7 @@ select_features_boruta <- function(train_dataset_boruta,
   set.seed(19091974) 
   boruta_formula<-as.formula(paste0(category,"~."))
   var_importance_boruta_raw <-
-    Boruta(boruta_formula, data = train_dataset_boruta %>% na.omit(),num.threads=2)
+    Boruta(boruta_formula, data = train_dataset_boruta %>% na.omit(),num.threads=2, doTrace =2 )
   var_importance_boruta <-
     attStats(var_importance_boruta_raw) %>%
     filter(decision == 'Confirmed') %>%
