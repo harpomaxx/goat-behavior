@@ -14,26 +14,36 @@ dataset %>% group_by(Anim) %>% count()
 
 ```{r}
 traindata <- readr::read_delim("../../../data/split/seba-caprino_features.tsv",delim="\t")
-traindata %>% group_by(Anim) %>% count()
+traindata %>% group_by(Activity) %>% count()
 ```
 
 ```{r}
 loocvdata <- readr::read_delim("../../../data/split/seba-caprino_loocv.tsv",delim="\t")
-loocvdata %>% group_by(Anim) %>% count()
+loocvdata %>% group_by(Activity) %>% count()
 ```
 
 ## Results
 ```{r}
+library(ztable)
+options(ztable.type='viewer')
 r<-readr::read_csv("../../../results.csv")
-names(r)<-c("exp","R","W","G","GM","ov")
+names(r)<-c("exp","TrR","TrW","TrG","TrGM","Trov","TrMicro",
+                  "TeR","TeW","TeG","TeGM","Teov","TeMicro")
 r<- r %>% filter(!is.na(exp))
-r
+ztable(r %>% as.data.frame() %>% select(c(1,2,3,4,5,8,9,10,11))) %>% makeHeatmap() 
 ```
+
 ```{r}
 library(ztable)
-options(ztable.type="viewer")
-ztable(r %>% as.data.frame()) %>% makeHeatmap()
+options(ztable.type='viewer')
+r<-readr::read_csv("../../../results-resample.csv")
+r <- r %>%  as.data.frame() %>% select(c(1,2,3,4,5,6,7))
+names(r)<-c("exp","BAcc","BAcc_sd","Sens","Sens_sd","Spec","Spec_sd")
+r<- r %>% filter(!is.na(exp))
+ztable(r) %>% makeHeatmap(c()) 
 ```
+
+
 ## selected variables
 
 ### initial
@@ -128,4 +138,10 @@ loocv_results %>% loocv_peformance_metrics
 
 ```
 
+## Model
+```{r}
+
+model<-readRDS("../../../models/boost/seba-caprino_model.rds")
+model$pred %>% group_by(Resample,obs) %>% summarise(Sens=sum(pred==obs)/n()) %>% group_by(obs) %>% summarise(Sens_Mean=mean(Sens),Sens_sd=sd(Sens)) %>% filter(obs == "G")  %>% select(Sens_Mean,Sens_sd) %> %as.yaml() %>% write("../../../test.yaml")
+```
 

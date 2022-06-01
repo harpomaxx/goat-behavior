@@ -8,7 +8,8 @@ ctrl_fast <- trainControl(
   verboseIter = FALSE,
   classProbs = TRUE,
   allowParallel = TRUE,
-  summaryFunction = multiClassSummary
+  summaryFunction = multiClassSummary,
+  selectionFunction = "oneSE"
 )
 
 ## Grid Search parameters

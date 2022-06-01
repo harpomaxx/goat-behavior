@@ -86,6 +86,28 @@ if (opt$input %>% is.null()  ||
     as.yaml() %>% write("metrics/train_model_resample.yaml")
   
   
+  ## Save resample Sensitivity per class
+  boost_model$pred %>% group_by(Resample,obs) %>% summarise(Sens=sum(pred==obs)/n()) %>% 
+    group_by(obs) %>% summarise(Sens_Mean=mean(Sens),Sens_sd=sd(Sens)) %>% 
+    filter(obs == "G")  %>% select(Sens_Mean,Sens_sd) %>% as.yaml() %>% 
+    write("metrics/train_model_resample_metrics_G.yaml")
+  
+  boost_model$pred %>% group_by(Resample,obs) %>% summarise(Sens=sum(pred==obs)/n()) %>% 
+    group_by(obs) %>% summarise(Sens_Mean=mean(Sens),Sens_sd=sd(Sens)) %>% 
+    filter(obs == "GM")  %>% select(Sens_Mean,Sens_sd) %>% as.yaml() %>% 
+    write("metrics/train_model_resample_metrics_GM.yaml")
+  
+  boost_model$pred %>% group_by(Resample,obs) %>% summarise(Sens=sum(pred==obs)/n()) %>% 
+    group_by(obs) %>% summarise(Sens_Mean=mean(Sens),Sens_sd=sd(Sens)) %>% 
+    filter(obs == "W")  %>% select(Sens_Mean,Sens_sd) %>% as.yaml() %>% 
+    write("metrics/train_model_resample_metrics_W.yaml")
+  
+  boost_model$pred %>% group_by(Resample,obs) %>% summarise(Sens=sum(pred==obs)/n()) %>% 
+    group_by(obs) %>% summarise(Sens_Mean=mean(Sens),Sens_sd=sd(Sens)) %>% 
+    filter(obs == "R")  %>% select(Sens_Mean,Sens_sd) %>% as.yaml() %>% 
+    write("metrics/train_model_resample_metrics_R.yaml")
+  
+  
   ## Save predictions results
   results<-predict_activity(boost_model,dataset)
   #write_csv(results$cm %>% as.data.frame() %>% tibble::rownames_to_column("class"), "metrics/train_model_cm.csv")
