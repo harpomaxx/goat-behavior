@@ -1,7 +1,7 @@
-mean_Sens: 0.7874043
-mean_Spec: 0.88842
-mean_BAcc: 0.8379121
-sd_Sens: 0.139613
-sd_Spec: 0.0764493
-sd_BAcc: 0.0873501
+mean_Sens: 0.7911205
+mean_Spec: 0.8859731
+mean_BAcc: 0.8385468
+sd_Sens: 0.1322969
+sd_Spec: 0.0825047
+sd_BAcc: 0.0726548
 

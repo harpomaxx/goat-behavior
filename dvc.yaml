@@ -83,7 +83,14 @@ stages:
         cache: false
     - metrics/train_model_metrics_R.yaml:
         cache: false
-        
+    - metrics/train_model_resample_metrics_R.yaml:
+        cache: false
+    - metrics/train_model_resample_metrics_G.yaml:
+        cache: false
+    - metrics/train_model_resample_metrics_W.yaml:
+        cache: false
+    - metrics/train_model_resample_metrics_GM.yaml:
+        cache: false
   train_model_loocv:
     cmd: Rscript code/R/scripts/060_train_model_loocv_cmd.R 
       --input data/split/seba-caprino_loocv.tsv

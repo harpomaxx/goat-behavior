@@ -1,5 +1,5 @@
 select_features_boruta:
-  maxnfeat: 15
+  maxnfeat: 25
   numsamp: 1
 
 train_model:
