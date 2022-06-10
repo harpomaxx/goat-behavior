@@ -1,4 +1,5 @@
-Sensitivity: 1.0
-Specificity: 0.9816361
-Balanced Accuracy: 0.990818
+Sensitivity: 0.8815789
+Specificity: 0.9346734
+Precision: 0.6320755
+Balanced Accuracy: 0.9081262
 

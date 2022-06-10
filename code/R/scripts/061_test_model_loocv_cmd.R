@@ -61,46 +61,51 @@ if (opt$input %>% is.null()  ||
                       selected_variables=selected_variables,
                       model = boost_model)
   
+  
   metrics<-loocv_peformance_metrics(results)
   metrics$byclass %>% 
     filter(class  =="Class: R") %>% 
-    select("mean_Sens","mean_Spec","mean_BAcc", "sd_Sens","sd_Spec","sd_BAcc") %>%
+    select("mean_Sens","mean_Spec","mean_BAcc", "sd_Sens","sd_Spec","sd_BAcc","mean_Prec","sd_Prec") %>%
     as.yaml() %>% 
     write("metrics/test_model_loocv_metrics_R.yaml")
   
   metrics$byclass %>% 
     filter(class  =="Class: W") %>% 
-    select("mean_Sens","mean_Spec","mean_BAcc", "sd_Sens","sd_Spec","sd_BAcc") %>%
+    select("mean_Sens","mean_Spec","mean_BAcc", "sd_Sens","sd_Spec","sd_BAcc","mean_Prec","sd_Prec") %>%
     as.yaml() %>% 
     write("metrics/test_model_loocv_metrics_W.yaml")
   
   metrics$byclass %>% 
     filter(class  =="Class: GM") %>% 
-    select("mean_Sens","mean_Spec","mean_BAcc", "sd_Sens","sd_Spec","sd_BAcc") %>%
+    select("mean_Sens","mean_Spec","mean_BAcc", "sd_Sens","sd_Spec","sd_BAcc","mean_Prec","sd_Prec") %>%
     as.yaml() %>% 
     write("metrics/test_model_loocv_metrics_GM.yaml")
   
   metrics$byclass %>% 
     filter(class  =="Class: G") %>% 
-    select("mean_Sens","mean_Spec","mean_BAcc", "sd_Sens","sd_Spec","sd_BAcc") %>%
+    select("mean_Sens","mean_Spec","mean_BAcc", "sd_Sens","sd_Spec","sd_BAcc","mean_Prec","sd_Prec") %>%
     as.yaml() %>% 
     write("metrics/test_model_loocv_metrics_G.yaml")
   
   metrics$byclass %>% 
-    select("mean_Sens","mean_Spec","mean_BAcc") %>%
+    select("mean_Sens","mean_Spec","mean_BAcc","mean_Prec") %>%
     summarise(sd_BAcc=sd(mean_BAcc,na.rm=TRUE),
               sd_Sens=sd(mean_Sens,na.rm=TRUE),
               sd_Spec=sd(mean_Spec,na.rm=TRUE),
+              sd_Prec=sd(mean_Prec,na.rm=TRUE),
               mean_Sens=mean(mean_Sens,na.rm=TRUE),
               mean_Spec=mean(mean_Spec,na.rm=TRUE),
-              mean_BAcc=mean(mean_BAcc,na.rm=TRUE)
+              mean_BAcc=mean(mean_BAcc,na.rm=TRUE),
+              mean_Prec=mean(mean_Prec,na.rm=TRUE)
     ) %>%
     as.yaml() %>% 
-    write("metrics/test_model_loocv_metrics_overall.yaml")
+    write("metrics/test_model_loocv_metrics_macro.yaml")
   
   metrics$micro %>% as.yaml %>%
     write("metrics/test_model_loocv_metrics_micro.yaml")
   
+  metrics$overall %>% as.yaml %>%
+    write("metrics/test_model_loocv_metrics_overall.yaml") 
   
   
   

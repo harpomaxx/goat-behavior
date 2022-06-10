@@ -1,4 +1,5 @@
-mean_BAcc_micro: 0.8441023
-mean_Spec_micro: 0.9220512
-mean_Sens_micro: 0.7661535
+mean_BAcc_micro: 0.8463341
+mean_Spec_micro: 0.9231671
+mean_Sens_micro: 0.7695012
+mean_Prec_micro: 0.7695012
 

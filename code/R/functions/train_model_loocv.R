@@ -131,12 +131,23 @@ test_model_loocv <- function(dataset, selected_variables, model) {
 
 
 
+#' Title
+#'
+#' @param loocv_results 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 loocv_peformance_metrics<-function(loocv_results){
-  overall<-lapply(loocv_results,function(x) x$overall %>% t() %>% 
+  overall_acc<-lapply(loocv_results,function(x) x$overall %>% t() %>% 
                     as.data.frame() %>% 
                     select(Accuracy)) %>% unlist() %>% t() 
- # overall  %>% mean()
-#  overall  %>% sd()
+  
+  
+  overall_kap<-lapply(loocv_results,function(x) x$overall %>% t() %>% 
+                    as.data.frame() %>% 
+                    select(Kappa)) %>% unlist() %>% t() 
   
   byclass <- lapply(loocv_results, function(x)
     x$byclass)
@@ -152,6 +163,8 @@ loocv_peformance_metrics<-function(loocv_results){
               sd_Spec=sd(Specificity, na.rm=TRUE),
               mean_BAcc = mean(`Balanced Accuracy`, na.rm =TRUE), 
               sd_BAcc=sd(`Balanced Accuracy`, na.rm=TRUE),
+              mean_Prec = mean(`Precision`, na.rm =TRUE), 
+              sd_Prec=sd(`Precision`, na.rm=TRUE),
     )
   
   micro_metrics <-  cbind(
@@ -198,14 +211,34 @@ loocv_peformance_metrics<-function(loocv_results){
             truth = obs,
             estimator = "micro"
           )
-      ) %>% summarise(mean_Sens_micro = mean(.estimate, na.rm = TRUE))
+      ) %>% summarise(mean_Sens_micro = mean(.estimate, na.rm = TRUE)),
+    
+     
+    purrr::map(
+      loocv_results,
+      .f = function(x)
+        data.frame(preds = x$predictions, obs = x$observations)
+    ) %>%
+      purrr::map_df(
+        .f = function(x)
+          precision(
+            x,
+            estimate = preds,
+            truth = obs,
+            estimator = "micro"
+          )
+      ) %>% summarise(mean_Prec_micro = mean(.estimate, na.rm = TRUE))
   )
  
   
   list(
     byclass = byclass,
-    overall = list(Acc_mean = overall %>% mean(), 
-                    Acc_sd = overall %>% sd()),
+    overall = list(
+                    Acc_mean = overall_acc %>% mean(), 
+                    Acc_sd = overall_acc %>% sd(),
+                    Kappa_mean = overall_kap %>% mean(), 
+                    Kappa__sd = overall_kap %>% sd()
+                   ),
     micro = micro_metrics %>% as.list()
   ) 
 }

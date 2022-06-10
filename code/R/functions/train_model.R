@@ -64,7 +64,8 @@ predict_activity<-function(model,dataset){
   predictions<-predict(model,dataset)  
   cm <- caret::confusionMatrix(reference=dataset$Activity %>% as.factor(),
                                predictions %>% as.factor() )
-  list(cm=cm$byClass,
+  list(overall=cm$overall,
+       cm=cm$byClass,
        predictions=predictions, 
        tab=cm$table)
 }
