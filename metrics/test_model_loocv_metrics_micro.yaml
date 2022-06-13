@@ -1,5 +1,5 @@
-mean_BAcc_micro: 0.8740762
-mean_Spec_micro: 0.9370381
-mean_Sens_micro: 0.8111143
-mean_Prec_micro: 0.8111143
+looBAcc_mean_micro: 0.8007616
+looSpec_mean_micro: 0.9003808
+looSens_mean_micro: 0.7011424
+Prec_mean_micro: 0.7011424
 

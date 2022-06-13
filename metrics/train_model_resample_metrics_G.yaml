@@ -1,7 +1,7 @@
-Sens_Mean: 0.8335685
-Sens_sd: 0.0817471
-Spec_Mean: 0.9445228
-Spec_sd: 0.027249
-Prec_Mean: 0.325
-Prec_sd: 0.0997682
+reSens_G_Mean: 0.7519153
+reSens_G_sd: 0.0584532
+reSpec_G_Mean: 0.9173051
+reSpec_G_sd: 0.0194844
+rePrec_G_Mean: 0.3
+rePrec_G_sd: 0.0805076
 

@@ -157,14 +157,14 @@ loocv_peformance_metrics<-function(loocv_results){
   byclass<-do.call(rbind, byclass) %>% as.data.frame() %>% 
     tibble::add_column(class =rownames) %>% 
     group_by(class) %>% 
-    summarise(mean_Sens = mean(Sensitivity, na.rm =TRUE), 
-              sd_Sens=sd(Sensitivity, na.rm=TRUE),
-              mean_Spec = mean(Specificity, na.rm =TRUE), 
-              sd_Spec=sd(Specificity, na.rm=TRUE),
-              mean_BAcc = mean(`Balanced Accuracy`, na.rm =TRUE), 
-              sd_BAcc=sd(`Balanced Accuracy`, na.rm=TRUE),
-              mean_Prec = mean(`Precision`, na.rm =TRUE), 
-              sd_Prec=sd(`Precision`, na.rm=TRUE),
+    summarise(looSens_mean = mean(Sensitivity, na.rm =TRUE), 
+              looSens_sd =sd(Sensitivity, na.rm=TRUE),
+              looSpec_mean = mean(Specificity, na.rm =TRUE), 
+              looSpec_sd=sd(Specificity, na.rm=TRUE),
+              looBAcc_mean = mean(`Balanced Accuracy`, na.rm =TRUE), 
+              looBAcc_sd=sd(`Balanced Accuracy`, na.rm=TRUE),
+              looPrec_mean = mean(`Precision`, na.rm =TRUE), 
+              looPrec_sd =sd(`Precision`, na.rm=TRUE),
     )
   
   micro_metrics <-  cbind(
@@ -181,7 +181,7 @@ loocv_peformance_metrics<-function(loocv_results){
             truth = obs,
             estimator = "micro"
           )
-      ) %>% summarise(mean_BAcc_micro = mean(.estimate, na.rm = TRUE)),
+      ) %>% summarise(looBAcc_mean_micro = mean(.estimate, na.rm = TRUE)),
     
     purrr::map(
       loocv_results,
@@ -196,7 +196,7 @@ loocv_peformance_metrics<-function(loocv_results){
             truth = obs,
             estimator = "micro"
           )
-      ) %>% summarise(mean_Spec_micro = mean(.estimate, na.rm = TRUE)),
+      ) %>% summarise(looSpec_mean_micro = mean(.estimate, na.rm = TRUE)),
     
     purrr::map(
       loocv_results,
@@ -211,7 +211,7 @@ loocv_peformance_metrics<-function(loocv_results){
             truth = obs,
             estimator = "micro"
           )
-      ) %>% summarise(mean_Sens_micro = mean(.estimate, na.rm = TRUE)),
+      ) %>% summarise(looSens_mean_micro = mean(.estimate, na.rm = TRUE)),
     
      
     purrr::map(
@@ -227,17 +227,17 @@ loocv_peformance_metrics<-function(loocv_results){
             truth = obs,
             estimator = "micro"
           )
-      ) %>% summarise(mean_Prec_micro = mean(.estimate, na.rm = TRUE))
+      ) %>% summarise(Prec_mean_micro = mean(.estimate, na.rm = TRUE))
   )
  
   
   list(
     byclass = byclass,
     overall = list(
-                    Acc_mean = overall_acc %>% mean(), 
-                    Acc_sd = overall_acc %>% sd(),
-                    Kappa_mean = overall_kap %>% mean(), 
-                    Kappa__sd = overall_kap %>% sd()
+                    looAcc_mean = overall_acc %>% mean(), 
+                    looAcc_sd = overall_acc %>% sd(),
+                    looKappa_mean = overall_kap %>% mean(), 
+                    looKappa_sd = overall_kap %>% sd()
                    ),
     micro = micro_metrics %>% as.list()
   ) 
