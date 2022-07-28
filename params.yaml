@@ -1,5 +1,5 @@
 select_features_boruta:
-  maxnfeat: 25
+  maxnfeat: 30
   numsamp: 1
 
 train_model:
@@ -42,14 +42,13 @@ select_initial:
   - DBL3
   - DBA12
   - DBA123
-  - X_Actlog
-  - Y_Actlog
-  - Stepslog
+  - X_Act
+  - Y_Act
+  - Steps
   - distance(m)
-  - VarXYlog
-  - DiffXYlog
-  - MeanXYlog
-  - prev_Active1
+  - VarXY
+  - DiffXY
+  - MeanXY
   - prev_Active1
   - prev_Active2
   - prev_Active3

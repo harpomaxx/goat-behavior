@@ -147,3 +147,204 @@ dataset_wide <- dataset_wide %>% rowwise %>%
 ztable(dataset_wide) %>% makeHeatmap(cols = 12) %>% print(caption="Table 3: Number of observations per animal discriminated by activity for Dataset B.")
 
 ```
+
+
+## Features
+```{r}
+library(dplyr)
+library(ztable)
+options(ztable.type = "latex")
+features_set<-googlesheets4::read_sheet("https://docs.google.com/spreadsheets/d/1nivRPl44Kq6G5YP17xitUGOnksuZ66pjLKHqfM0gRJQ/edit?usp=sharing") 
+rgroup=c("IceTag Monitor","GPS Collar","Derived from sensor input")
+n.rgroup=c(4,4,15)
+
+
+z<-features_set %>% select(-Type) %>% ztable(booktabs = T) %>%
+    addrgroup(rgroup=rgroup,n.rgroup=n.rgroup,cspan.rgroup=3)
+print(z)
+```
+
+## LoocV results per experiment 
+```{r}
+create_loocv_restable <- function (experiment_id, experiments_data){
+library(ztable)
+library(tibble)
+activity_metrics <-
+  experiments_data %>% filter(Experiment == experiment_id) %>% select(
+    Experiment,
+    reSens_R_Mean,
+    reSens_GM_Mean,
+    reSens_W_Mean,
+    reSens_G_Mean,
+    rePrec_R_Mean,
+    rePrec_GM_Mean,
+    rePrec_W_Mean,
+    rePrec_G_Mean,
+    reSpec_R_Mean,
+    reSpec_GM_Mean,
+    reSpec_W_Mean,
+    reSpec_G_Mean
+  ) %>%
+  tidyr::pivot_longer(
+    !Experiment,
+    names_to = c("Activity", "Metric"),
+    names_pattern = "re(.*)_(.*)_Mean",
+    values_to = "count"
+  ) %>%
+  tidyr::pivot_wider(names_from = Metric, values_from = c(count)) %>% as.data.frame() %>% select(!Experiment)
+
+all_metrics <-
+  experiments_data %>% filter(.data$Experiment == experiment_id) %>% select(
+    Experiment,
+    reAcc_Mean,
+    reKappa_Mean,
+    reSens_Mean,
+    reSens_Mean,
+    rePrec_Mean,
+    reSpec_Mean
+  ) %>% t() %>% as.data.frame()
+
+all_metrics <- all_metrics %>% slice(2:6)
+all_metrics$V1 <- as.double(all_metrics$V1)
+all_metrics <- all_metrics %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>% rownames_to_column("Metrics")
+
+all_metrics$Metrics <- c("Accuracy",
+                         "Kappa",
+                         "Sensitivity",
+                         "Specificity",
+                         "Precision")
+
+activity_metrics <- activity_metrics %>% rename(Metrics = "Activity")
+activity_metrics$Metrics <- c("Sensitivity", "Precision", "Specificity")
+
+names(all_metrics) <- names(activity_metrics)
+rgroup = c("Overall", "Per Activity")
+n.rgroup = c(5, 3)
+
+table_results <- 
+rbind(all_metrics, activity_metrics) %>%
+  ztable(align = "llllll") %>% spanCol(row = 2, from = 3, to =
+                                                         6) %>%
+  spanCol(row = 3, from = 3, to = 6) %>%
+  spanCol(row = 4, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 6, from = 3, to = 6) %>%
+  addrgroup(rgroup = rgroup,
+            n.rgroup = n.rgroup,
+            cspan.rgroup = 1) %>% hlines(add = c(5))
+
+table_results
+}
+```
+
+```{r}
+experiments <- c("5f-1s", "10f-1s", "15f-1s", "20f-1s", "25f-1s")
+experiments_no_log <-
+  c("5f-1s-no-log",
+    "10f-1s-no-log",
+    "15f-1s-no-log",
+    "20f-1s-no-log",
+    "25f-1s-no-log")
+experiments <- c(experiments_no_log)
+r2 <- readr::read_csv("../../../resample.csv")
+r2 <- r2 %>% filter(Experiment %in% experiments)
+
+options(ztable.type = 'latex')
+options(ztable.zebra=NULL)
+create_loocv_restable("5f-1s-no-log",r2)  
+create_loocv_restable("10f-1s-no-log",r2)
+create_loocv_restable("15f-1s-no-log",r2)
+create_loocv_restable("20f-1s-no-log",r2)
+create_loocv_restable("25f-1s-no-log",r2)
+```
+
+```{r}
+library(ztable)
+library(tibble)
+experiments <- c("5f-1s", "10f-1s", "15f-1s", "20f-1s", "25f-1s")
+experiments_no_log <-
+  c("5f-1s-no-log",
+    "10f-1s-no-log",
+    "15f-1s-no-log",
+    "20f-1s-no-log",
+    "25f-1s-no-log")
+experiments <- c(experiments_no_log)
+options(ztable.type = 'viewer')
+r2 <- readr::read_csv("../../../resample.csv")
+r2 <- r2 %>% filter(Experiment %in% experiments)
+activity_metrics <-
+  r2 %>% filter(Experiment == "15f-1s-no-log") %>% select(
+    Experiment,
+    reSens_R_Mean,
+    reSens_GM_Mean,
+    reSens_W_Mean,
+    reSens_G_Mean,
+    rePrec_R_Mean,
+    rePrec_GM_Mean,
+    rePrec_W_Mean,
+    rePrec_G_Mean,
+    reSpec_R_Mean,
+    reSpec_GM_Mean,
+    reSpec_W_Mean,
+    reSpec_G_Mean
+  ) %>%
+  tidyr::pivot_longer(
+    !Experiment,
+    names_to = c("Activity", "Metric"),
+    names_pattern = "re(.*)_(.*)_Mean",
+    values_to = "count"
+  ) %>%
+  tidyr::pivot_wider(names_from = Metric, values_from = c(count)) %>% as.data.frame() %>% select(!Experiment)
+
+all_metrics <-
+  r2 %>% filter(Experiment == "15f-1s-no-log") %>% select(
+    Experiment,
+    reAcc_Mean,
+    reKappa_Mean,
+    reSens_Mean,
+    reSens_Mean,
+    rePrec_Mean,
+    reSpec_Mean
+  ) %>% t() %>% as.data.frame()
+
+all_metrics <- all_metrics %>% slice(2:6)
+all_metrics$V1 <- as.double(all_metrics$V1)
+all_metrics <- all_metrics %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>% rownames_to_column("Metrics")
+
+all_metrics$Metrics <- c("Accuracy",
+                         "Kappa",
+                         "Sensitivity",
+                         "Specificity",
+                         "Precision")
+
+activity_metrics <- activity_metrics %>% rename(Metrics = "Activity")
+activity_metrics$Metrics <- c("Sensitivity", "Precision", "Specificity")
+
+names(all_metrics) <- names(activity_metrics)
+rgroup = c("Overall", "Per Activity")
+n.rgroup = c(5, 3)
+
+table_15f_1s_no_log <- 
+rbind(all_metrics, activity_metrics) %>%
+  ztable(align = "llll", longtable = TRUE) %>% spanCol(row = 2, from = 3, to =
+                                                         6) %>%
+  spanCol(row = 3, from = 3, to = 6) %>%
+  spanCol(row = 4, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 6, from = 3, to = 6) %>%
+  addrgroup(rgroup = rgroup,
+            n.rgroup = n.rgroup,
+            cspan.rgroup = 1) %>% hlines(add = c(5))
+
+table_25f_1s_no_log
+table_15f_1s_no_log
+```
+

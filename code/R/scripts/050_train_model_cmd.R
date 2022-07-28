@@ -91,7 +91,7 @@ if (opt$input %>% is.null()  ||
   ## Save resample metrics
   boost_model$resample %>% select(Accuracy,AUC,Mean_Sensitivity, Mean_Specificity,Mean_Precision,Kappa,Mean_Balanced_Accuracy) %>% 
     summarise(#mean_AUC=mean(AUC),sd_AUC=sd(AUC), 
-              reAcc_Mean=mean(Accuracy,na.rm = TRUE),Acc_sd=sd(Accuracy,na.rm = TRUE),
+              reAcc_Mean=mean(Accuracy,na.rm = TRUE),reAcc_sd=sd(Accuracy,na.rm = TRUE),
               reBAcc_Mean=mean(Mean_Balanced_Accuracy,na.rm = TRUE),reBAcc_sd=sd(Mean_Balanced_Accuracy,na.rm = TRUE),
               reSens_Mean=mean(Mean_Sensitivity,na.rm = TRUE),reSens_sd=sd(Mean_Sensitivity,na.rm = TRUE),
               rePrec_Mean=mean(Mean_Precision,na.rm = TRUE),rePrec_sd=sd(Mean_Precision,na.rm = TRUE),
