@@ -2,11 +2,12 @@
 title: "Tables and others for article"
 output: html_notebook
 ---
-```{r}
+```{r setup}
 library(dplyr)
 library(tidyr)
 library(yaml)
-libr
+library(dplyr)
+library(ggplot2)
 ```
 ```{r}
 dataset %>% group_by(Anim) %>% count() %>% select(Anim)
@@ -164,9 +165,9 @@ z<-features_set %>% select(-Type) %>% ztable(booktabs = T) %>%
 print(z)
 ```
 
-## LoocV results per experiment 
+## Resampling results per experiment 
 ```{r}
-create_loocv_restable <- function (experiment_id, experiments_data){
+create_resampling_restable <- function (experiment_id, experiments_data){
 library(ztable)
 library(tibble)
 activity_metrics <-
@@ -240,7 +241,7 @@ rbind(all_metrics, activity_metrics) %>%
 table_results
 }
 ```
-
+### Tables
 ```{r}
 experiments <- c("5f-1s", "10f-1s", "15f-1s", "20f-1s", "25f-1s")
 experiments_no_log <-
@@ -248,18 +249,99 @@ experiments_no_log <-
     "10f-1s-no-log",
     "15f-1s-no-log",
     "20f-1s-no-log",
-    "25f-1s-no-log")
+    "25f-1s-no-log",
+    "30f-1s-no-log",
+    "35f-1s-no-log"
+    )
 experiments <- c(experiments_no_log)
 r2 <- readr::read_csv("../../../resample.csv")
 r2 <- r2 %>% filter(Experiment %in% experiments)
 
 options(ztable.type = 'latex')
 options(ztable.zebra=NULL)
-create_loocv_restable("5f-1s-no-log",r2)  
-create_loocv_restable("10f-1s-no-log",r2)
-create_loocv_restable("15f-1s-no-log",r2)
-create_loocv_restable("20f-1s-no-log",r2)
-create_loocv_restable("25f-1s-no-log",r2)
+create_resampling_restable("5f-1s-no-log",r2)  
+create_resampling_restable("10f-1s-no-log",r2)
+create_resampling_restable("15f-1s-no-log",r2)
+create_resampling_restable("20f-1s-no-log",r2)
+create_resampling_restable("25f-1s-no-log",r2)
+create_resampling_restable("30f-1s-no-log",r2)
+create_resampling_restable("35f-1s-no-log",r2)
+```
+
+### Plots
+```{r fig.height=5, fig.width=10}
+
+experiments_no_log <-
+  c("5f-1s-no-log",
+    "10f-1s-no-log",
+    "15f-1s-no-log",
+    "20f-1s-no-log",
+    "25f-1s-no-log",
+    "30f-1s-no-log",
+    "35f-1s-no-log"
+    )
+experiments <- c(experiments_no_log)
+r2 <- readr::read_csv("../../../resample.csv")
+r2 <- r2 |> filter(Experiment %in% experiments)
+
+r2$id<-c(5,10,15,20,25,30,35)
+
+sens<- r2 |> ggplot(aes(x=id))+
+  ylab("Sensitivity")+
+  xlab("Feature number")+
+    ylim(c(0.5,1))+
+  geom_point(aes(y=reSens_Mean))+
+  geom_point(aes(x=25,y=max(reSens_Mean)),size=3,color='red')+
+  geom_line(aes(y=reSens_Mean))+
+  geom_ribbon(aes(ymax=reSens_Mean+reSens_sd, ymin=reSens_Mean-reSens_sd),alpha=0.1,fill="orange")+
+  geom_line(aes(y=reSens_Mean+reSens_sd),color='orange')+
+  geom_line(aes(y=reSens_Mean-reSens_sd),color='orange')+
+  scale_x_continuous(breaks = seq(0,35,by = 5))+
+  theme_linedraw()
+
+
+bacc<- r2 |> ggplot(aes(x=id))+
+  ylab(" Accuracy")+
+  xlab("Feature number")+
+  ylim(c(0.5,1))+
+  geom_point(aes(y=reAcc_Mean))+
+  geom_point(aes(x=25,y=max(reAcc_Mean)),size=3,color='red')+
+  geom_line(aes(y=reAcc_Mean))+
+  geom_ribbon(aes(ymax=reAcc_Mean+reAcc_sd, ymin=reAcc_Mean-reAcc_sd),alpha=0.1,fill="orange")+
+  geom_line(aes(y=reAcc_Mean+reAcc_sd),color='orange')+
+  geom_line(aes(y=reAcc_Mean-reAcc_sd),color='orange')+
+  scale_x_continuous(breaks = seq(0,35,by = 5))+
+  theme_linedraw()
+  
+
+spec<- r2 |> ggplot(aes(x=id))+
+  ylab("Specificity")+
+  xlab("Feature number")+
+  ylim(c(0.5,1))+
+  geom_point(aes(y=reSpec_Mean))+
+  geom_point(aes(x=25,y=max(reSpec_Mean)),size=3,color='red')+
+  geom_line(aes(y=reSpec_Mean))+
+  geom_ribbon(aes(ymax=reSpec_Mean+reSpec_sd, ymin=reSpec_Mean-reSpec_sd),alpha=0.1,fill="orange")+
+  geom_line(aes(y=reSpec_Mean+reSpec_sd),color='orange')+
+  geom_line(aes(y=reSpec_Mean-reSpec_sd),color='orange')+
+  scale_x_continuous(breaks = seq(0,35,by = 5))+
+  theme_linedraw()
+ 
+
+prec <- r2 |> ggplot(aes(x=id))+
+  ylab("Precision")+
+  xlab("Feature number")+
+  ylim(c(0.5,1))+
+  geom_point(aes(y=rePrec_Mean))+
+  geom_point(aes(x=25,y=max(rePrec_Mean)),size=3,color='red')+
+  geom_line(aes(y=rePrec_Mean))+
+  geom_ribbon(aes(ymax=rePrec_Mean+rePrec_sd, ymin=rePrec_Mean-rePrec_sd),alpha=0.1,fill="orange")+
+  geom_line(aes(y=rePrec_Mean+rePrec_sd),color='orange')+
+  geom_line(aes(y=rePrec_Mean-rePrec_sd),color='orange')+
+  scale_x_continuous(breaks = seq(0,35,by = 5))+
+  theme_linedraw()
+#prec
+gridExtra::grid.arrange(sens,bacc,spec,prec)
 ```
 
 ```{r}
