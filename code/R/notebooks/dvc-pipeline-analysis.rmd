@@ -2,13 +2,34 @@
 title: "Pipeline analysis"
 output: html_notebook
 ---
+
+
+```{r setup, warning=FALSE}
+# CHANGE TO THE CORRESPONDING WORKING DIRECTORY
+knitr::opts_knit$set(root.dir = '/home/harpo/Dropbox/ongoing-work/git-repos/goat-behavior//')
+#knitr::opts_knit$set(root.dir = '/home/rodralez/hostdir/jobs/demand-planning/')
+```
+
 ```{r}
 library(dplyr)
 library(yaml)
 ```
+
+## Remove repeated days from dataset 
+```{r}
+dataset <- readr::read_delim("rawdata/seba-caprino-feature-engineering-seba-abdel.tsv",delim="\t")
+dataset %>% filter(Experiment =="Abdel")  
+selected_days<-dataset  %>% group_by(Anim,Date) %>% count() %>% ungroup() %>% distinct(Anim, .keep_all = T) %>% select(Anim,Date) %>% 
+  tidyr::unite("anim_date",Anim:Date ,sep = "_") %>% unlist() %>% unname()
+
+dataset<-dataset %>% tidyr::unite("anim_date",Anim:Date ,sep = "_") %>% filter(anim_date %in% selected_days) %>% tidyr::separate(anim_date,into = c("Anim","Date"),sep="_")
+
+dataset %>% group_by(Anim) %>% count()
+readr::write_tsv(dataset,"rawdata/seba-caprino-feature-engineering-seba-abdel_1d.tsv")
+```
+
 ```{r}
 dataset <- readr::read_delim("../../../data/preprocessed/seba-caprino-preprocessed.tsv", delim="\t")
-
 dataset %>% group_by(Anim) %>% count()
 ```
 
