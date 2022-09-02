@@ -111,20 +111,20 @@ stages:
       md5: 8430c2b2179e7c0002d7613b62037f86
       size: 2405
     - path: data/split/seba-caprino_features.tsv
-      md5: c5554a6a0ddd09592d597def11fb69d7
-      size: 114568
+      md5: e6f82fc6c2faa614bda19de1bac89492
+      size: 53038
     params:
       params.yaml:
-        select_features_boruta.maxnfeat: 5
+        select_features_boruta.maxnfeat: 30
         select_features_boruta.numsamp: 1
     outs:
     - path: data/topnfeatures
-      md5: c5742e264d110852bac899be3a64e046.dir
-      size: 56
+      md5: 99e28da0aba96a5b4fd421b4cefb45d0.dir
+      size: 223
       nfiles: 1
     - path: metrics/select_features_boruta.yaml
-      md5: 429c429191417fee4cb06446ab74bb77
-      size: 22
+      md5: e94cc639c786c9b87100c370bfddec8f
+      size: 23
   separate_train_test:
     cmd: Rscript code/R/scripts/separate_train_test_dataset.R --input data/initial_features/seba-caprino-preprocessed-initial-features.tsv
       --output data/split/seba-caprino
@@ -170,14 +170,14 @@ stages:
       md5: 90fd06ffb663a11c53f2eb80282debca
       size: 8191
     - path: data/split/seba-caprino_features.tsv
-      md5: c5554a6a0ddd09592d597def11fb69d7
-      size: 114568
+      md5: e6f82fc6c2faa614bda19de1bac89492
+      size: 53038
     - path: data/split/seba-caprino_loocv.tsv
-      md5: b99d489dabb6bec4e372e63257476c46
-      size: 122247
+      md5: cee8a7e700dc2b90a74c2e85c3f8b8b9
+      size: 79146
     - path: data/topnfeatures/seba-caprino_selected_features.tsv
-      md5: 900be9de55ba36277ab787ec3b3b1ef8
-      size: 56
+      md5: 533fd199d0aeec56131ef6b6eefe925b
+      size: 223
     params:
       params.yaml:
         train_model:
@@ -204,38 +204,38 @@ stages:
           vfrac: 0.1
     outs:
     - path: metrics/train_model_metrics_G.yaml
-      md5: d6f161b65f7321e38a4a82cb6de07bb5
-      size: 93
+      md5: 7e67bcdeeb097a59bc6c67993d48a2b3
+      size: 96
     - path: metrics/train_model_metrics_GM.yaml
-      md5: d95cc27f7c5858d4903d38298125fce0
-      size: 97
+      md5: c8962ade94126757a1870878a4bf4844
+      size: 92
     - path: metrics/train_model_metrics_R.yaml
-      md5: 1370e4ddcf60028cdae4ea5a42194158
-      size: 97
+      md5: 9b154fad791cd4fe3191271c8ebc9ffc
+      size: 91
     - path: metrics/train_model_metrics_W.yaml
-      md5: 03a3e8785363ab8f92f1b337fd5e7ad0
+      md5: b8b966aa86af4c101cf876176b4ef2b3
       size: 97
     - path: metrics/train_model_predictions.csv
-      md5: 78f2ea2df4a1ff38713dd44bed0a10f1
-      size: 2901
+      md5: b9ce64dd8ff852fd343394d6f900b86e
+      size: 1903
     - path: metrics/train_model_resample.yaml
-      md5: 2f811e8488d39a8f09654681194b4411
-      size: 265
+      md5: 6fa8b064b72887ab0c2de109ab84bbab
+      size: 263
     - path: metrics/train_model_resample_metrics_G.yaml
-      md5: c3de0c73edacd6e159eb8273539e1e88
-      size: 144
+      md5: 4754bded300938927974bd261e50611b
+      size: 145
     - path: metrics/train_model_resample_metrics_GM.yaml
-      md5: 6164c65599509238f7a9e786da20fedf
-      size: 145
+      md5: 5313c2a53914bd7eda674d9ef175cf67
+      size: 146
     - path: metrics/train_model_resample_metrics_R.yaml
-      md5: 0e1c3825cb647ef177ebb15d23846417
-      size: 145
+      md5: e4f75fd4a80f4d75d7c4e4bc91aacb6d
+      size: 134
     - path: metrics/train_model_resample_metrics_W.yaml
-      md5: a956c514d1b0d2aee2aacc785d929a9e
+      md5: f0171cd174f4b1c5500c986d05ae92b6
       size: 145
     - path: models/boost
-      md5: 3d5aa6dafa1121243213973fa0aadaad.dir
-      size: 302024
+      md5: 71f40c1eb2e850036354433a46f03048.dir
+      size: 539437
       nfiles: 1
   separate_dataset:
     cmd: Rscript code/R/scripts/030_separate_dataset_cmd.R --input data/initial_features/seba-caprino-preprocessed-initial-features.tsv
@@ -248,8 +248,8 @@ stages:
       md5: 82bed98f7642328ba6237ab4481f56f0
       size: 1891
     - path: data/initial_features/seba-caprino-preprocessed-initial-features.tsv
-      md5: 510eb8f226e918b8bfb0c0ebd1ff75da
-      size: 236462
+      md5: edae177ff386e300fa79afdcd04594d4
+      size: 131831
     params:
       params.yaml:
         separate_dataset.excluded_anim:
@@ -261,14 +261,14 @@ stages:
         - a15
     outs:
     - path: data/split
-      md5: b58e4b1d245c90ddd942ea63ee4b175f.dir
-      size: 236815
+      md5: 27bdb4cdb8b8d7bf6ecb7769237edb81.dir
+      size: 132184
       nfiles: 2
     - path: metrics/separate_dataset.yaml
-      md5: ae0fa0b90dc9ea022ccaa33c4cacd0de
+      md5: 8ec635ff82cd17aefaea9d180f34b5a2
       size: 46
   prepare_dataset:
-    cmd: Rscript code/R/scripts/010_prepare_dataset_cmd.R --input rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
+    cmd: Rscript code/R/scripts/010_prepare_dataset_cmd.R --input rawdata/seba-caprino-feature-engineering-seba-abdel_1d.tsv
       --output data/preprocessed/seba-caprino-preprocessed.tsv
     deps:
     - path: code/R/functions/create_lag_features.R
@@ -280,13 +280,13 @@ stages:
     - path: code/R/scripts/010_prepare_dataset_cmd.R
       md5: 3cc1f6ef109208966d16efe9a8a9efbd
       size: 1128
-    - path: rawdata/seba-caprino-feature-engineering-seba-abdel.tsv
-      md5: 0f7b713988aba8bb854605744161277a
-      size: 265696
+    - path: rawdata/seba-caprino-feature-engineering-seba-abdel_1d.tsv
+      md5: dbb492cda29479dee46fe2861f8d7e12
+      size: 144816
     outs:
     - path: data/preprocessed
-      md5: d3de68f43e8ae8916ba311896a8e0e8d.dir
-      size: 494995
+      md5: f55c693f43fd7fe7805fc9a46e1396b1.dir
+      size: 276530
       nfiles: 1
   select_features_initial:
     cmd: Rscript code/R/scripts/020_select_features_initial_cmd.R --input data/preprocessed/seba-caprino-preprocessed.tsv
@@ -299,8 +299,8 @@ stages:
       md5: 3e79a16c9a0d8a6d58714168c72957eb
       size: 1371
     - path: data/preprocessed/seba-caprino-preprocessed.tsv
-      md5: d7975f598e2610d129fe5e09ea135c64
-      size: 494995
+      md5: 44c44f0a5116de7eba87911fa353961e
+      size: 276530
     params:
       params.yaml:
         select_initial.features:
@@ -343,8 +343,8 @@ stages:
         - prev_headdown3
     outs:
     - path: data/initial_features
-      md5: 9fe65022788ab9de70c3640c137635e9.dir
-      size: 236462
+      md5: 2e6faa0e8f16546a0e57aff8541e650d.dir
+      size: 131831
       nfiles: 1
     - path: metrics/select_features_initial.yaml
       md5: d49966b25bd843624ef991eed7a37d4e
@@ -364,14 +364,14 @@ stages:
       md5: 1e16b3169530d4db9617df80fc33649c
       size: 4466
     - path: data/split/seba-caprino_loocv.tsv
-      md5: b99d489dabb6bec4e372e63257476c46
-      size: 122247
+      md5: cee8a7e700dc2b90a74c2e85c3f8b8b9
+      size: 79146
     - path: data/topnfeatures/seba-caprino_selected_features.tsv
-      md5: 900be9de55ba36277ab787ec3b3b1ef8
-      size: 56
+      md5: 533fd199d0aeec56131ef6b6eefe925b
+      size: 223
     - path: models/boost/seba-caprino_model.rds
-      md5: f98fa9e4e97478b9bf3ec04f46b2987e
-      size: 302024
+      md5: aed34d5bdaed1080718f8c38c42bc36e
+      size: 539437
     params:
       params.yaml:
         train_model:
@@ -398,29 +398,29 @@ stages:
           vfrac: 0.1
     outs:
     - path: metrics/train_model_loocv_metrics_G.yaml
-      md5: 559a477fd3ff15b1cce659a49decb4ad
-      size: 184
+      md5: 909a4e639f87f0932a45ec24c79c7b55
+      size: 183
     - path: metrics/train_model_loocv_metrics_GM.yaml
-      md5: 809916ec944a4eb1fad08a641dbe7454
-      size: 185
+      md5: 34e2725e1368ca8db25e815e1509a0b6
+      size: 184
     - path: metrics/train_model_loocv_metrics_R.yaml
-      md5: c9855e951bbee2b50efc32486fda8bb5
+      md5: b98b8b4224cff06aa0c6fd15d9fb58b8
       size: 183
     - path: metrics/train_model_loocv_metrics_W.yaml
-      md5: a153a87edc5eb6f75b64575407afcf28
-      size: 184
+      md5: 0445fbf07f5f9cb0990206bdd859c399
+      size: 185
     - path: metrics/train_model_loocv_metrics_macro.yaml
-      md5: 3725e843a33e6b230ed9f4650a5b0301
+      md5: cb0d1af023e6a9f415f94a0fa126021d
       size: 184
     - path: metrics/train_model_loocv_metrics_micro.yaml
-      md5: a62abd0aad9ed4690cc026a064e7a958
-      size: 116
+      md5: 69de6c8f15f66b68006cd0e1183b8b5d
+      size: 118
     - path: metrics/train_model_loocv_metrics_overall.yaml
-      md5: 25665c1827fb561799864161356baf53
-      size: 92
+      md5: 2ccfa56d7afca7be844e5fea43897821
+      size: 93
     - path: models/train_loocv
-      md5: 6496ba2bd3fe1e3ea74ab490936cc363.dir
-      size: 3401887
+      md5: 62225e6836801e24df4ee0c3beadf574.dir
+      size: 3781301
       nfiles: 1
   calculate_shap:
     cmd: Rscript code/R/scripts/070_calculate_shap_cmd.R --input data/split/seba-caprino_features.tsv
@@ -440,21 +440,21 @@ stages:
       md5: 5e97b8bd96547bc1429ee5a3d06a7a7c
       size: 2493
     - path: data/split/seba-caprino_features.tsv
-      md5: c5554a6a0ddd09592d597def11fb69d7
-      size: 114568
+      md5: e6f82fc6c2faa614bda19de1bac89492
+      size: 53038
     - path: data/topnfeatures/seba-caprino_selected_features.tsv
-      md5: 900be9de55ba36277ab787ec3b3b1ef8
-      size: 56
+      md5: 533fd199d0aeec56131ef6b6eefe925b
+      size: 223
     - path: models/boost/seba-caprino_model.rds
-      md5: f98fa9e4e97478b9bf3ec04f46b2987e
-      size: 302024
+      md5: aed34d5bdaed1080718f8c38c42bc36e
+      size: 539437
     params:
       params.yaml:
         calculate_shap.nsim: 10
     outs:
     - path: data/shap
-      md5: 316d685e282f477c6110e46d9c5f5b0b.dir
-      size: 65355
+      md5: 76b8008834bc1a3d0eb0eda47bde32b6.dir
+      size: 140797
       nfiles: 1
   plot_shap:
     cmd: Rscript code/R/scripts/075_plot_shap_cmd.R --input data/split/seba-caprino_features.tsv
@@ -480,18 +480,18 @@ stages:
       md5: 7d8aa548717d02e93f5477104f5efe46
       size: 2450
     - path: data/shap/shap_values.tsv
-      md5: 3e883f48334acb65fb589db92e1c59a8
-      size: 65355
+      md5: fdc4e30ec620d16572655452dcc78bf0
+      size: 140797
     - path: data/split/seba-caprino_features.tsv
-      md5: c5554a6a0ddd09592d597def11fb69d7
-      size: 114568
+      md5: e6f82fc6c2faa614bda19de1bac89492
+      size: 53038
     - path: data/topnfeatures/seba-caprino_selected_features.tsv
-      md5: 900be9de55ba36277ab787ec3b3b1ef8
-      size: 56
+      md5: 533fd199d0aeec56131ef6b6eefe925b
+      size: 223
     outs:
     - path: images/shap
-      md5: 293c3e872f8561b1d626ae50e6bcb1bf.dir
-      size: 272343
+      md5: 6d301ee74aa7831d053f9c167bcbc0f0.dir
+      size: 496823
       nfiles: 2
   test_model_loocv:
     cmd: Rscript code/R/scripts/061_test_model_loocv_cmd.R --input data/split/seba-caprino_loocv.tsv
@@ -514,37 +514,37 @@ stages:
       md5: 94577e421d49a9f57db3e070d8f23383
       size: 3851
     - path: data/split/seba-caprino_features.tsv
-      md5: c5554a6a0ddd09592d597def11fb69d7
-      size: 114568
+      md5: e6f82fc6c2faa614bda19de1bac89492
+      size: 53038
     - path: data/topnfeatures/seba-caprino_selected_features.tsv
-      md5: 900be9de55ba36277ab787ec3b3b1ef8
-      size: 56
+      md5: 533fd199d0aeec56131ef6b6eefe925b
+      size: 223
     - path: models/boost/seba-caprino_model.rds
-      md5: f98fa9e4e97478b9bf3ec04f46b2987e
-      size: 302024
+      md5: aed34d5bdaed1080718f8c38c42bc36e
+      size: 539437
     outs:
     - path: metrics/test_model_loocv_metrics_G.yaml
-      md5: 4f1b8d8e6b324dee858d21dde369a8d8
+      md5: 2e17d08437148fcc74213aea90aa48bd
       size: 184
     - path: metrics/test_model_loocv_metrics_GM.yaml
-      md5: 0652894dee00b63e9f957b0438bea1db
+      md5: c6a4ce5b9aef3e7658bbae600c976fcf
       size: 185
     - path: metrics/test_model_loocv_metrics_R.yaml
-      md5: 2a71bb2aa8e7f2f3281bf845cfb96090
-      size: 184
+      md5: 53f5bb3a715ab4b6bfda777d8d796461
+      size: 183
     - path: metrics/test_model_loocv_metrics_W.yaml
-      md5: b3a8f5b987d97ef11295072363e983aa
+      md5: e6630054ee7df94d278540e50100fc9a
       size: 185
     - path: metrics/test_model_loocv_metrics_macro.yaml
-      md5: e20dfaa4272f6193a37170357f6a817b
+      md5: c40109b7582f82b68449957cd991a795
       size: 184
     - path: metrics/test_model_loocv_metrics_micro.yaml
-      md5: 4ceee31a2bb868761519adeb0d191d51
+      md5: 92edec8ce0cba20be11f3872d51c1dc3
       size: 117
     - path: metrics/test_model_loocv_metrics_overall.yaml
-      md5: d7d58a4be04ae83b88154c8098b4a9ec
-      size: 90
+      md5: 4049b6c4f52f8d11879299024cfa2a2e
+      size: 93
     - path: models/test_loocv
-      md5: ff30115fac1bb124a920b62498d3455c.dir
-      size: 963413
+      md5: 74dd890b87b72eb57e31a1c5813d39cb.dir
+      size: 1115151
       nfiles: 1
