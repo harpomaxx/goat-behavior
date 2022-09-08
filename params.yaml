@@ -1,5 +1,5 @@
 select_features_boruta:
-  maxnfeat: 30
+  maxnfeat: 35
   numsamp: 1
 
 train_model:
@@ -68,10 +68,10 @@ separate_dataset:
   excluded_anim:
   - a1
   - a2
+  - a3
   - a7
   - a10
   - a14
   - a15
-
 calculate_shap:
   nsim: 10

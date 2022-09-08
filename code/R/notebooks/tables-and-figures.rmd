@@ -34,6 +34,19 @@ dataset %>% group_by(Anim) %>% count() %>% select(Anim)
 dataset %>% count()
 ```
 
+```{r}
+separate_anim <- c(
+  "a1",
+  "a2",
+  "a3",
+  "a7",
+  "a10",
+  "a14",
+  "a15")
+
+dataset %>% filter(Anim %in% separate_anim) %>% nrow()
+```
+
 ## Generate dataset table
 ```{r}
 library(kableExtra)
@@ -96,10 +109,11 @@ dataset_wide <-
     select(Activity, 
         "a1",
         "a2",
+        "a3",
         "a7",
         "a14",
         "a15",
-        "a16")
+        "a10")
 
 dataset_wide <- dataset_wide %>% rowwise %>%
   mutate(Total = sum(across(2:7)))  %>% ungroup %>%
@@ -127,14 +141,13 @@ dataset_wide <-
   
     select(Activity, 
       
-        "a3",
         "a4",
         "a5",
         "a6",
    
         "a8",
         "a9",
-        "a10",
+        "a16",
         "a11",
         "a12",
         "a13"
@@ -142,11 +155,11 @@ dataset_wide <-
 
 
 dataset_wide <- dataset_wide %>% rowwise %>%
-  mutate(Total = sum(across(2:11)))  %>% ungroup %>%
+  mutate(Total = sum(across(2:10)))  %>% ungroup %>%
   as.data.frame() 
 
 ztable(dataset_wide) %>% makeHeatmap(cols = 12) %>% print(caption="Table 3: Number of observations per animal discriminated by activity for Dataset B.")
-
+dataset %>% group_by(Anim) %>% count()
 ```
 
 
@@ -167,6 +180,7 @@ print(z)
 
 ## Resampling results per experiment 
 ```{r}
+
 create_resampling_restable <- function (experiment_id, experiments_data){
 library(ztable)
 library(tibble)
@@ -243,49 +257,53 @@ table_results
 ```
 ### Tables
 ```{r}
+options(ztable.type = 'viewer')
 experiments <- c("5f-1s", "10f-1s", "15f-1s", "20f-1s", "25f-1s")
 experiments_no_log <-
-  c("5f-1s-no-log",
-    "10f-1s-no-log",
-    "15f-1s-no-log",
-    "20f-1s-no-log",
-    "25f-1s-no-log",
-    "30f-1s-no-log",
-    "35f-1s-no-log"
+  c("5f-1s-no-log-1d",
+    "10f-1s-no-log-1d",
+    "15f-1s-no-log-1d",
+    "20f-1s-no-log-1d",
+    "25f-1s-no-log-1d",
+    "30f-1s-no-log-1d",
+    "35f-1s-no-log-1d"
     )
 experiments <- c(experiments_no_log)
 r2 <- readr::read_csv("../../../resample.csv")
 r2 <- r2 %>% filter(Experiment %in% experiments)
 
-options(ztable.type = 'latex')
+#options(ztable.type = 'latex')
 options(ztable.zebra=NULL)
-create_resampling_restable("5f-1s-no-log",r2)  
-create_resampling_restable("10f-1s-no-log",r2)
-create_resampling_restable("15f-1s-no-log",r2)
-create_resampling_restable("20f-1s-no-log",r2)
-create_resampling_restable("25f-1s-no-log",r2)
-create_resampling_restable("30f-1s-no-log",r2)
-create_resampling_restable("35f-1s-no-log",r2)
+create_resampling_restable("5f-1s-no-log-1d",r2)  
+create_resampling_restable("10f-1s-no-log-1d",r2)
+create_resampling_restable("15f-1s-no-log-1d",r2)
+create_resampling_restable("20f-1s-no-log-1d",r2)
+create_resampling_restable("25f-1s-no-log-1d",r2)
+create_resampling_restable("30f-1s-no-log-1d",r2)
+create_resampling_restable("35f-1s-no-log-1d",r2)
 ```
 
 ### Plots
 ```{r fig.height=5, fig.width=10}
 
 experiments_no_log <-
-  c("5f-1s-no-log",
-    "10f-1s-no-log",
-    "15f-1s-no-log",
-    "20f-1s-no-log",
-    "25f-1s-no-log",
-    "30f-1s-no-log",
-    "35f-1s-no-log"
+  c("5f-1s-no-log-1d",
+    "10f-1s-no-log-1d",
+    "15f-1s-no-log-1d",
+    "20f-1s-no-log-1d",
+    "25f-1s-no-log-1d",
+    "30f-1s-no-log-1d",
+    "35f-1s-no-log-1d"
     )
 experiments <- c(experiments_no_log)
 r2 <- readr::read_csv("../../../resample.csv")
 r2 <- r2 |> filter(Experiment %in% experiments)
+r2$id<-c(35,30,25,20,15,10,5) 
+r2 <- r2 %>% arrange(id)
+r2
+```
 
-r2$id<-c(5,10,15,20,25,30,35)
-
+```{r}
 sens<- r2 |> ggplot(aes(x=id))+
   ylab("Sensitivity")+
   xlab("Feature number")+
@@ -429,4 +447,22 @@ rbind(all_metrics, activity_metrics) %>%
 table_25f_1s_no_log
 table_15f_1s_no_log
 ```
+
+# Test results experiments (per animal)
+```{r}
+library(ztable)
+options(ztable.type='viewer')
+r<-readr::read_csv("./test_results.csv")
+
+names(r)<-names(r) %>% gsub(pattern = "metrics/test_model_loocv_metrics_(.*).yaml:(.*)_mean", replacement = "\\1_\\2", x = names(r))
+names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
+
+#r<- r %>% filter(!is.na(exp))
+#ztable(r %>% as.data.frame() %>% select(c(1,2,3,4,5,8,9,10,11))) %>% makeHeatmap() 
+
+r %>% filter(grepl(pattern = ".*-no-log.*",Experiment))
+
+
+```
+
 

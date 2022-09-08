@@ -115,7 +115,7 @@ stages:
       size: 53038
     params:
       params.yaml:
-        select_features_boruta.maxnfeat: 30
+        select_features_boruta.maxnfeat: 35
         select_features_boruta.numsamp: 1
     outs:
     - path: data/topnfeatures
@@ -234,8 +234,8 @@ stages:
       md5: f0171cd174f4b1c5500c986d05ae92b6
       size: 145
     - path: models/boost
-      md5: 71f40c1eb2e850036354433a46f03048.dir
-      size: 539437
+      md5: acdba39b2717e73c0af26ea7a8552f0f.dir
+      size: 539442
       nfiles: 1
   separate_dataset:
     cmd: Rscript code/R/scripts/030_separate_dataset_cmd.R --input data/initial_features/seba-caprino-preprocessed-initial-features.tsv
@@ -255,17 +255,18 @@ stages:
         separate_dataset.excluded_anim:
         - a1
         - a2
+        - a3
         - a7
         - a10
         - a14
         - a15
     outs:
     - path: data/split
-      md5: 27bdb4cdb8b8d7bf6ecb7769237edb81.dir
+      md5: 55e169522d11bb72977a1e744e0f162f.dir
       size: 132184
       nfiles: 2
     - path: metrics/separate_dataset.yaml
-      md5: 8ec635ff82cd17aefaea9d180f34b5a2
+      md5: cc395ee77c65db88de3e2d76e7b685ba
       size: 46
   prepare_dataset:
     cmd: Rscript code/R/scripts/010_prepare_dataset_cmd.R --input rawdata/seba-caprino-feature-engineering-seba-abdel_1d.tsv
@@ -370,8 +371,8 @@ stages:
       md5: 533fd199d0aeec56131ef6b6eefe925b
       size: 223
     - path: models/boost/seba-caprino_model.rds
-      md5: aed34d5bdaed1080718f8c38c42bc36e
-      size: 539437
+      md5: e1d38ca6672c253d94689cb8aab74274
+      size: 539442
     params:
       params.yaml:
         train_model:
@@ -419,8 +420,8 @@ stages:
       md5: 2ccfa56d7afca7be844e5fea43897821
       size: 93
     - path: models/train_loocv
-      md5: 62225e6836801e24df4ee0c3beadf574.dir
-      size: 3781301
+      md5: a8e9e5738e2fac54ede8d7e5451373b8.dir
+      size: 3781331
       nfiles: 1
   calculate_shap:
     cmd: Rscript code/R/scripts/070_calculate_shap_cmd.R --input data/split/seba-caprino_features.tsv
@@ -446,15 +447,15 @@ stages:
       md5: 533fd199d0aeec56131ef6b6eefe925b
       size: 223
     - path: models/boost/seba-caprino_model.rds
-      md5: aed34d5bdaed1080718f8c38c42bc36e
-      size: 539437
+      md5: e1d38ca6672c253d94689cb8aab74274
+      size: 539442
     params:
       params.yaml:
         calculate_shap.nsim: 10
     outs:
     - path: data/shap
-      md5: 76b8008834bc1a3d0eb0eda47bde32b6.dir
-      size: 140797
+      md5: 6a44ab9485020eb1938c3faa04133236.dir
+      size: 140669
       nfiles: 1
   plot_shap:
     cmd: Rscript code/R/scripts/075_plot_shap_cmd.R --input data/split/seba-caprino_features.tsv
@@ -480,8 +481,8 @@ stages:
       md5: 7d8aa548717d02e93f5477104f5efe46
       size: 2450
     - path: data/shap/shap_values.tsv
-      md5: fdc4e30ec620d16572655452dcc78bf0
-      size: 140797
+      md5: 5056bb54ee37efe5f84bd25571273da5
+      size: 140669
     - path: data/split/seba-caprino_features.tsv
       md5: e6f82fc6c2faa614bda19de1bac89492
       size: 53038
@@ -490,8 +491,8 @@ stages:
       size: 223
     outs:
     - path: images/shap
-      md5: 6d301ee74aa7831d053f9c167bcbc0f0.dir
-      size: 496823
+      md5: 776e53def9c31525aa841ce22c9f7a62.dir
+      size: 510694
       nfiles: 2
   test_model_loocv:
     cmd: Rscript code/R/scripts/061_test_model_loocv_cmd.R --input data/split/seba-caprino_loocv.tsv
@@ -520,8 +521,8 @@ stages:
       md5: 533fd199d0aeec56131ef6b6eefe925b
       size: 223
     - path: models/boost/seba-caprino_model.rds
-      md5: aed34d5bdaed1080718f8c38c42bc36e
-      size: 539437
+      md5: e1d38ca6672c253d94689cb8aab74274
+      size: 539442
     outs:
     - path: metrics/test_model_loocv_metrics_G.yaml
       md5: 2e17d08437148fcc74213aea90aa48bd
@@ -545,6 +546,6 @@ stages:
       md5: 4049b6c4f52f8d11879299024cfa2a2e
       size: 93
     - path: models/test_loocv
-      md5: 74dd890b87b72eb57e31a1c5813d39cb.dir
-      size: 1115151
+      md5: dc06d6e92980737b6ed42b9d15811fef.dir
+      size: 1115156
       nfiles: 1

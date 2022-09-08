@@ -53,9 +53,9 @@ loocv_results <- readRDS("../../../models/loocv/seba-caprino_model_loocv_results
 ```{r}
 library(ztable)
 options(ztable.type='viewer')
-r<-readr::read_csv("../../../results.csv")
+r<-readr::read_csv("./test_results.csv")
 
-names(r)<-names(r) %>% gsub(pattern = "metrics/train_model_loocv_metrics_(.*).yaml:(.*)_mean", replacement = "\\1_\\2", x = names(r))
+names(r)<-names(r) %>% gsub(pattern = "metrics/test_model_loocv_metrics_(.*).yaml:(.*)_mean", replacement = "\\1_\\2", x = names(r))
 names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
 
 #r<- r %>% filter(!is.na(exp))
