@@ -368,7 +368,8 @@ experiments_no_log <-
     "10f-1s-no-log",
     "15f-1s-no-log",
     "20f-1s-no-log",
-    "25f-1s-no-log")
+    "25f-1s-no-log",
+    "5f-1s-no-log-1d-loocvtune")
 experiments <- c(experiments_no_log)
 options(ztable.type = 'viewer')
 r2 <- readr::read_csv("../../../resample.csv")
@@ -445,11 +446,105 @@ table_25f_1s_no_log
 table_15f_1s_no_log
 ```
 
+
+# LOOCV results experiments (per animal)
+```{r}
+create_loocv_restable <- function (experiment_id, experiments_data){
+library(ztable)
+library(tibble)
+activity_metrics <-
+  experiments_data %>% filter(Experiment == experiment_id) %>% select(
+    Experiment,
+    R_Sens,
+    GM_Sens,
+    W_Sens,
+    G_Sens,
+    R_Prec,
+    GM_Prec,
+    W_Prec,
+    G_Prec,
+    R_Spec,
+    GM_Spec,
+    W_Spec,
+    G_Spec
+  ) %>%
+  tidyr::pivot_longer(
+    !Experiment,
+    names_to = c("Activity", "Metrics"),
+    names_pattern = "^(.*)_(.*)$",
+    values_to = "count"
+  ) %>%
+  tidyr::pivot_wider(names_from = Activity, values_from = c(count)) %>% as.data.frame() %>% select(!Experiment)
+
+all_metrics <-
+  experiments_data %>% filter(.data$Experiment == experiment_id) %>% select(
+    Experiment,
+    overall_Acc,
+    overall_Kappa,
+    micro_Sens_micro,
+    micro_Prec_micro,
+    micro_Spec_micro,
+  ) %>% t() %>% as.data.frame()
+
+all_metrics <- all_metrics %>% slice(2:6)
+all_metrics$V1 <- as.double(all_metrics$V1)
+all_metrics <- all_metrics %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>% rownames_to_column("Metrics")
+
+all_metrics$Metrics <- c("Accuracy",
+                         "Kappa",
+                         "Sensitivity",
+                         "Specificity",
+                         "Precision")
+
+#activity_metrics <- activity_metrics %>% rename(Metrics = "Activity")
+activity_metrics$Metrics <- c("Sensitivity", "Precision", "Specificity")
+
+names(all_metrics) <- names(activity_metrics)
+rgroup = c("Overall", "Per Activity")
+n.rgroup = c(5, 3)
+
+table_results <- 
+rbind(all_metrics, activity_metrics) %>%
+  ztable(align = "llllll") %>% spanCol(row = 2, from = 3, to =
+                                                         6) %>%
+  spanCol(row = 3, from = 3, to = 6) %>%
+  spanCol(row = 4, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 6, from = 3, to = 6) %>%
+  addrgroup(rgroup = rgroup,
+            n.rgroup = n.rgroup,
+            cspan.rgroup = 1) %>% hlines(add = c(5))
+
+table_results
+}
+```
+
+```{r}
+library(ztable)
+options(ztable.type='viewer')
+r<-readr::read_csv("../../../loocv_results.csv")
+r <- r %>% filter(Experiment %in% experiments)
+names(r)<-names(r) %>% gsub(pattern = "metrics/train_model_loocv_metrics_(.*).yaml:(.*)_mean", replacement = "\\1_\\2", x = names(r))
+names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
+
+#r<- r %>% filter(!is.na(exp))
+#ztable(r %>% as.data.frame() %>% select(c(1,2,3,4,5,8,9,10,11))) %>% makeHeatmap() 
+
+
+#options(ztable.type = 'latex')
+options(ztable.zebra=NULL)
+create_loocv_restable("5f-1s-no-log-1d-loocvtune",r)  
+```
+
 # Test results experiments (per animal)
 ```{r}
 library(ztable)
 options(ztable.type='viewer')
-r<-readr::read_csv("./test_results.csv")
+r<-readr::read_csv("../../../test_results.csv")
 
 names(r)<-names(r) %>% gsub(pattern = "metrics/test_model_loocv_metrics_(.*).yaml:(.*)_mean", replacement = "\\1_\\2", x = names(r))
 names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
@@ -458,7 +553,9 @@ names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
 #ztable(r %>% as.data.frame() %>% select(c(1,2,3,4,5,8,9,10,11))) %>% makeHeatmap() 
 
 r %>% filter(grepl(pattern = ".*-no-log.*",Experiment))
-
+options(ztable.zebra=NULL)
+create_loocv_restable("25f-1s-no-log-1d",r)  
+```
 
 ```
 
