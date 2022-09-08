@@ -63,15 +63,23 @@ if (opt$input %>% is.null()  ||
     quit()
   }
   
+  #grid<-expand.grid(
+  #  depth = boost_model$bestTune$depth,
+  #  learning_rate = boost_model$bestTune$learning_rate,
+  #  iterations = boost_model$bestTune$iterations, 
+  #  l2_leaf_reg = boost_model$bestTune$l2_leaf_reg, 
+  #  rsm = boost_model$bestTune$rsm, 
+  #  border_count = boost_model$bestTune$border_count
+  #)
+
   grid<-expand.grid(
-    depth = boost_model$bestTune$depth,
-    learning_rate = boost_model$bestTune$learning_rate,
-    iterations = boost_model$bestTune$iterations, 
-    l2_leaf_reg = boost_model$bestTune$l2_leaf_reg, 
-    rsm = boost_model$bestTune$rsm, 
-    border_count = boost_model$bestTune$border_count
+    depth = params$train_model$depth,
+    learning_rate = params$train_model$learning_rate,
+    iterations = params$train_model$iterations,
+    l2_leaf_reg = params$train_model$l2_leaf_reg,
+    rsm = params$train_model$rsm,
+    border_count = params$train_model$border_count
   )
-  
  print(grid) 
  results <- 
     train_model_loocv(dataset = dataset,

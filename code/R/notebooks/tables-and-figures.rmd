@@ -263,7 +263,8 @@ experiments_no_log <-
     "20f-1s-no-log-1d",
     "25f-1s-no-log-1d",
     "30f-1s-no-log-1d",
-    "35f-1s-no-log-1d"
+    "35f-1s-no-log-1d",
+    "5f-1s-no-log-1d-loocvtune"
     )
 experiments <- c(experiments_no_log)
 r2 <- readr::read_csv("../../../resample.csv")
@@ -371,6 +372,7 @@ experiments_no_log <-
     "25f-1s-no-log",
     "5f-1s-no-log-1d-loocvtune")
 experiments <- c(experiments_no_log)
+
 options(ztable.type = 'viewer')
 r2 <- readr::read_csv("../../../resample.csv")
 r2 <- r2 %>% filter(Experiment %in% experiments)
@@ -537,7 +539,7 @@ names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
 
 #options(ztable.type = 'latex')
 options(ztable.zebra=NULL)
-create_loocv_restable("5f-1s-no-log-1d-loocvtune",r)  
+create_loocv_restable("5f-1s-no-log-1d",r)  
 ```
 
 # Test results experiments (per animal)
@@ -554,7 +556,7 @@ names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
 
 r %>% filter(grepl(pattern = ".*-no-log.*",Experiment))
 options(ztable.zebra=NULL)
-create_loocv_restable("25f-1s-no-log-1d",r)  
+create_loocv_restable("5f-1s-no-log-1d",r)  
 ```
 
 ```
