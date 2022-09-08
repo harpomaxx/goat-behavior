@@ -67,11 +67,11 @@ select_initial:
 separate_dataset:
   excluded_anim:
   - a1
-  - a2
-  - a3
-  - a7
-  - a10
-  - a14
   - a15
+  - a3
+  - a8
+  - a10
+  - a4
+  - a2
 calculate_shap:
   nsim: 10
