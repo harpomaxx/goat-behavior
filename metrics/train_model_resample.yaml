@@ -1,13 +1,13 @@
-reAcc_Mean: 0.7648105
-reAcc_sd: 0.0474611
-reBAcc_Mean: 0.8506734
-reBAcc_sd: 0.0407017
-reSens_Mean: 0.7923819
-reSens_sd: 0.0662199
-rePrec_Mean: 0.7138192
-rePrec_sd: 0.0653859
-reSpec_Mean: 0.9089648
-reSpec_sd: 0.0199337
-reKappa_Mean: 0.6257753
-reKappa_sd: 0.0724232
+reAcc_Mean: 0.843026
+reAcc_sd: 0.0975569
+reBAcc_Mean: 0.8703182
+reBAcc_sd: 0.0745417
+reSens_Mean: 0.8106579
+reSens_sd: 0.1112586
+rePrec_Mean: 0.8189993
+rePrec_sd: 0.1238218
+reSpec_Mean: 0.9299784
+reSpec_sd: 0.0395716
+reKappa_Mean: 0.72522
+reKappa_sd: 0.1590524
 

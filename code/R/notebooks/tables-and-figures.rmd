@@ -257,14 +257,13 @@ table_results
 options(ztable.type = 'viewer')
 experiments <- c("5f-1s", "10f-1s", "15f-1s", "20f-1s", "25f-1s")
 experiments_no_log <-
-  c("5f-1s-no-log-1d",
-    "10f-1s-no-log-1d",
-    "15f-1s-no-log-1d",
-    "20f-1s-no-log-1d",
-    "25f-1s-no-log-1d",
-    "30f-1s-no-log-1d",
-    "35f-1s-no-log-1d",
-    "5f-1s-no-log-1d-loocvtune"
+  c("5f-1s-no-log-1d-loocvtune",
+    "10f-1s-no-log-1d-loocvtune",
+    "15f-1s-no-log-1d-loocvtune",
+    "20f-1s-no-log-1d-loocvtune",
+    "25f-1s-no-log-1d-loocvtune",
+    "30f-1s-no-log-1d-loocvtune",
+    "35f-1s-no-log-1d-loocvtune"
     )
 experiments <- c(experiments_no_log)
 r2 <- readr::read_csv("../../../resample.csv")
@@ -272,26 +271,26 @@ r2 <- r2 %>% filter(Experiment %in% experiments)
 
 #options(ztable.type = 'latex')
 options(ztable.zebra=NULL)
-create_resampling_restable("5f-1s-no-log-1d",r2)  
-create_resampling_restable("10f-1s-no-log-1d",r2)
-create_resampling_restable("15f-1s-no-log-1d",r2)
-create_resampling_restable("20f-1s-no-log-1d",r2)
-create_resampling_restable("25f-1s-no-log-1d",r2)
-create_resampling_restable("30f-1s-no-log-1d",r2)
-create_resampling_restable("35f-1s-no-log-1d",r2)
+create_resampling_restable("5f-1s-no-log-1d-loocvtune",r2)  
+create_resampling_restable("10f-1s-no-log-1d-loocvtune",r2)
+create_resampling_restable("15f-1s-no-log-1d-loocvtune",r2)
+create_resampling_restable("20f-1s-no-log-1d-loocvtune",r2)
+create_resampling_restable("25f-1s-no-log-1d-loocvtune",r2)
+create_resampling_restable("30f-1s-no-log-1d-loocvtune",r2)
+create_resampling_restable("35f-1s-no-log-1d-loocvtune",r2)
 ```
 
 ### Plots
 ```{r fig.height=5, fig.width=10}
 
 experiments_no_log <-
-  c("5f-1s-no-log-1d",
-    "10f-1s-no-log-1d",
-    "15f-1s-no-log-1d",
-    "20f-1s-no-log-1d",
-    "25f-1s-no-log-1d",
-    "30f-1s-no-log-1d",
-    "35f-1s-no-log-1d"
+  c("5f-1s-no-log-1d-loocvtune",
+    "10f-1s-no-log-1d-loocvtune",
+    "15f-1s-no-log-1d-loocvtune",
+    "20f-1s-no-log-1d-loocvtune",
+    "25f-1s-no-log-1d-loocvtune",
+    "30f-1s-no-log-1d-loocvtune",
+    "35f-1s-no-log-1d-loocvtune"
     )
 experiments <- c(experiments_no_log)
 r2 <- readr::read_csv("../../../resample.csv")
@@ -301,13 +300,13 @@ r2 <- r2 %>% arrange(id)
 r2
 ```
 
-```{r}
+```{r fig.height=6, fig.width=8}
 sens<- r2 |> ggplot(aes(x=id))+
   ylab("Sensitivity")+
   xlab("Feature number")+
     ylim(c(0.5,1))+
   geom_point(aes(y=reSens_Mean))+
-  geom_point(aes(x=25,y=max(reSens_Mean)),size=3,color='red')+
+  geom_point(aes(x=15,y=max(reSens_Mean)),size=3,color='red')+
   geom_line(aes(y=reSens_Mean))+
   geom_ribbon(aes(ymax=reSens_Mean+reSens_sd, ymin=reSens_Mean-reSens_sd),alpha=0.1,fill="orange")+
   geom_line(aes(y=reSens_Mean+reSens_sd),color='orange')+
@@ -321,7 +320,7 @@ bacc<- r2 |> ggplot(aes(x=id))+
   xlab("Feature number")+
   ylim(c(0.5,1))+
   geom_point(aes(y=reAcc_Mean))+
-  geom_point(aes(x=25,y=max(reAcc_Mean)),size=3,color='red')+
+  geom_point(aes(x=15,y=max(reAcc_Mean)),size=3,color='red')+
   geom_line(aes(y=reAcc_Mean))+
   geom_ribbon(aes(ymax=reAcc_Mean+reAcc_sd, ymin=reAcc_Mean-reAcc_sd),alpha=0.1,fill="orange")+
   geom_line(aes(y=reAcc_Mean+reAcc_sd),color='orange')+
@@ -335,7 +334,7 @@ spec<- r2 |> ggplot(aes(x=id))+
   xlab("Feature number")+
   ylim(c(0.5,1))+
   geom_point(aes(y=reSpec_Mean))+
-  geom_point(aes(x=25,y=max(reSpec_Mean)),size=3,color='red')+
+  geom_point(aes(x=15,y=max(reSpec_Mean)),size=3,color='red')+
   geom_line(aes(y=reSpec_Mean))+
   geom_ribbon(aes(ymax=reSpec_Mean+reSpec_sd, ymin=reSpec_Mean-reSpec_sd),alpha=0.1,fill="orange")+
   geom_line(aes(y=reSpec_Mean+reSpec_sd),color='orange')+
@@ -349,7 +348,7 @@ prec <- r2 |> ggplot(aes(x=id))+
   xlab("Feature number")+
   ylim(c(0.5,1))+
   geom_point(aes(y=rePrec_Mean))+
-  geom_point(aes(x=25,y=max(rePrec_Mean)),size=3,color='red')+
+  geom_point(aes(x=15,y=max(rePrec_Mean)),size=3,color='red')+
   geom_line(aes(y=rePrec_Mean))+
   geom_ribbon(aes(ymax=rePrec_Mean+rePrec_sd, ymin=rePrec_Mean-rePrec_sd),alpha=0.1,fill="orange")+
   geom_line(aes(y=rePrec_Mean+rePrec_sd),color='orange')+
@@ -539,7 +538,7 @@ names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
 
 #options(ztable.type = 'latex')
 options(ztable.zebra=NULL)
-create_loocv_restable("5f-1s-no-log-1d",r)  
+create_loocv_restable("25f-1s-no-log-1d-loocvtune",r)  
 ```
 
 # Test results experiments (per animal)
@@ -556,7 +555,7 @@ names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
 
 r %>% filter(grepl(pattern = ".*-no-log.*",Experiment))
 options(ztable.zebra=NULL)
-create_loocv_restable("5f-1s-no-log-1d",r)  
+create_loocv_restable("25f-1s-no-log-1d-loocvtune",r)  
 ```
 
 ```

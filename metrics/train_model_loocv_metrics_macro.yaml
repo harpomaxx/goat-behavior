@@ -1,9 +1,9 @@
-looBAcc_sd: 0.0463517
-looSens_sd: 0.187118
-looSpec_sd: 0.1042285
-looPrec_sd: 0.2128341
-looSens_mean: 0.7041946
-looSpec_mean: 0.8992196
-looBAcc_mean: 0.7758166
-looPrec_mean: 0.5653734
+looBAcc_sd: 0.1111012
+looSens_sd: 0.3004494
+looSpec_sd: 0.0885792
+looPrec_sd: 0.2842475
+looSens_mean: 0.6197334
+looSpec_mean: 0.8884948
+looBAcc_mean: 0.7294808
+looPrec_mean: 0.5325868
 
