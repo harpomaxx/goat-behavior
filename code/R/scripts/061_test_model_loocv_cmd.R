@@ -104,13 +104,13 @@ if (opt$input %>% is.null()  ||
               looPrec_mean=mean(looPrec_mean,na.rm=TRUE)
     ) %>%
     as.yaml() %>% 
-    write("metrics/test_model_loocv_metrics_macro.yaml")
+    write("metrics/test_model_loocv_metrics_avg_all.yaml")
   
-  metrics$micro %>% as.yaml %>%
-    write("metrics/test_model_loocv_metrics_micro.yaml")
+  c(metrics$overall,metrics$macro) as.yaml %>%
+    write("metrics/test_model_loocv_metrics_macro_overall.yaml")
   
-  metrics$overall %>% as.yaml %>%
-    write("metrics/test_model_loocv_metrics_overall.yaml")
+  #metrics$overall %>% as.yaml %>%
+  #write("metrics/test_model_loocv_metrics_overall.yaml")
   
   ## Save model 
   dir.create(dirname(opt$results), showWarnings = FALSE)
