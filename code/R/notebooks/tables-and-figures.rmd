@@ -47,7 +47,7 @@ separate_anim <- c(
 dataset %>% filter(Anim %in% separate_anim) %>% nrow()
 ```
 
-## Generate dataset table
+# Generate dataset table
 ```{r}
 library(kableExtra)
 library(ztable)
@@ -89,7 +89,7 @@ ztbl<-ztable(dataset_wide)#
 ztbl %>% makeHeatmap(cols = 18) %>% print(caption="Table 1: Number of observations per animal discriminated by activity.")
 ```
 
-## Generate DATASET A table
+# Generate DATASET A table
 ```{r results='asis'}
 
 library(kableExtra)
@@ -122,7 +122,7 @@ ztable(dataset_wide) %>% makeHeatmap(cols = 9) %>%  print(caption="Table 2: Numb
 
 ```
 
-## Generate DATASET B table
+# Generate DATASET B table
 ```{r}
 
 library(kableExtra)
@@ -160,7 +160,7 @@ dataset %>% group_by(Anim) %>% count()
 ```
 
 
-## Features
+# Features
 ```{r}
 library(dplyr)
 library(ztable)
@@ -175,7 +175,9 @@ z<-features_set %>% select(-Type) %>% ztable(booktabs = T) %>%
 print(z)
 ```
 
-## Resampling results per experiment 
+# Resampling results per experiment 
+
+## Function
 ```{r}
 
 create_resampling_restable <- function (experiment_id, experiments_data){
@@ -252,8 +254,10 @@ rbind(all_metrics, activity_metrics) %>%
 table_results
 }
 ```
-### Tables
+## Tables
 ```{r}
+#dvc exp show -n 2 --drop ".*" --keep "re.*|Experiment" --csv >resample.csv
+
 options(ztable.type = 'viewer')
 experiments <- c("5f-1s", "10f-1s", "15f-1s", "20f-1s", "25f-1s")
 experiments_no_log <-
@@ -280,7 +284,7 @@ create_resampling_restable("30f-1s-no-log-1d-loocvtune",r2)
 create_resampling_restable("35f-1s-no-log-1d-loocvtune",r2)
 ```
 
-### Plots
+## Plots
 ```{r fig.height=5, fig.width=10}
 
 experiments_no_log <-
@@ -449,6 +453,7 @@ table_15f_1s_no_log
 
 
 # LOOCV results experiments (per animal)
+## Function
 ```{r}
 create_loocv_restable <- function (experiment_id, experiments_data){
 library(ztable)
@@ -525,8 +530,21 @@ table_results
 ```
 
 ```{r}
+#dvc exp show -n 2 --drop ".*" --keep ".*train.*loo.*mean_*|Experiment" --csv >loocv_results.csv
 library(ztable)
 options(ztable.type='viewer')
+
+experiments_no_log <-
+  c("5f-1s-no-log-1d-loocvtune",
+    "10f-1s-no-log-1d-loocvtune",
+    "15f-1s-no-log-1d-loocvtune",
+    "20f-1s-no-log-1d-loocvtune",
+    "25f-1s-no-log-1d-loocvtune",
+    "30f-1s-no-log-1d-loocvtune",
+    "35f-1s-no-log-1d-loocvtune"
+    )
+experiments <- c(experiments_no_log)
+
 r<-readr::read_csv("../../../loocv_results.csv")
 r <- r %>% filter(Experiment %in% experiments)
 names(r)<-names(r) %>% gsub(pattern = "metrics/train_model_loocv_metrics_(.*).yaml:(.*)_mean", replacement = "\\1_\\2", x = names(r))
@@ -536,17 +554,23 @@ names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
 #ztable(r %>% as.data.frame() %>% select(c(1,2,3,4,5,8,9,10,11))) %>% makeHeatmap() 
 
 
-#options(ztable.type = 'latex')
+options(ztable.type = 'latex')
 options(ztable.zebra=NULL)
-create_loocv_restable("25f-1s-no-log-1d-loocvtune",r)  
+create_loocv_restable("15f-1s-no-log-1d-loocvtune",r)  
 ```
 
 # Test results experiments (per animal)
+
+
+
+
 ```{r}
+#dvc exp show  --drop ".*" --keep ".*test.*loo.*mean_*|Experiment" --csv >test_results.csv
 library(ztable)
 options(ztable.type='viewer')
 r<-readr::read_csv("../../../test_results.csv")
 
+#names(r)<-names(r) %>% gsub(pattern = "metrics/test_model_loocv_metrics_(.*).yaml:(.*)_(mean|sd)", replacement = "\\1_\\2_\\3", x = names(r))
 names(r)<-names(r) %>% gsub(pattern = "metrics/test_model_loocv_metrics_(.*).yaml:(.*)_mean", replacement = "\\1_\\2", x = names(r))
 names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
 
@@ -555,9 +579,20 @@ names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
 
 r %>% filter(grepl(pattern = ".*-no-log.*",Experiment))
 options(ztable.zebra=NULL)
-create_loocv_restable("25f-1s-no-log-1d-loocvtune",r)  
+options(ztable.type = 'viewer')
+create_loocv_restable("15f-1s-no-log-1d-loocvtune",r)  
 ```
 
+```{r}
+dataset <- readr::read_delim("data/split/seba-caprino_loocv.tsv",delim='\t')
+goat_model <- readRDS("models/boost/seba-caprino_model.rds")
+
+predictions<-predict(goat_model,dataset)
+cm<-caret::confusionMatrix(reference=as.factor(dataset$Activity),predictions)
+p_act_res<-cm$byClass %>% as.data.frame() %>% select(Sensitivity,Precision,Specificity) %>% t() %>% as.data.frame() 
+names(p_act_res) <- gsub(pattern = "Class: (.*)", replacement = "\\1", x = names(p_act_res))
+p_act_res %>% mutate_all(.funs=funs(round(.,2))) %>%  select(R,GM,W,G)
 ```
+
 
 

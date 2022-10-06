@@ -1,0 +1,152 @@
+---
+title: "Analize results"
+output: html_notebook
+---
+
+```{r setup, warning=FALSE}
+# CHANGE TO THE CORRESPONDING WORKING DIRECTORY
+knitr::opts_knit$set(root.dir = '/home/harpo/Dropbox/ongoing-work/git-repos/goat-behavior/')
+#knitr::opts_knit$set(root.dir = '/home/rodralez/hostdir/jobs/demand-planning/')
+```
+```{r}
+library(dplyr)
+suppressWarnings(suppressPackageStartupMessages(library(yardstick)))
+```
+
+```{r}
+test_results <- readRDS("models/test_loocv/seba-caprino_model_test_loocv_results.rds")
+byclass <- lapply(test_results,function(x) x$byclass)
+
+     rownames <- do.call(rbind, byclass)   %>% rownames()
+  byclass<-do.call(rbind, byclass) %>% as.data.frame() %>% 
+    tibble::add_column(class =rownames) %>% 
+    group_by(class) %>% 
+    summarise(looSens_mean = mean(Sensitivity, na.rm =TRUE), 
+              looSens_sd =sd(Sensitivity, na.rm=TRUE),
+              looSpec_mean = mean(Specificity, na.rm =TRUE), 
+              looSpec_sd=sd(Specificity, na.rm=TRUE),
+              looBAcc_mean = mean(`Balanced Accuracy`, na.rm =TRUE), 
+              looBAcc_sd=sd(`Balanced Accuracy`, na.rm=TRUE),
+              looPrec_mean = mean(`Precision`, na.rm =TRUE), 
+              looPrec_sd =sd(`Precision`, na.rm=TRUE),
+    )
+```
+# Calculate Caret confusion metric
+
+Most of the metrics does not consider MICRO and MACRO
+
+```{r}
+dataset <- readr::read_delim("data/split/seba-caprino_loocv.tsv",delim='\t')
+goat_model <- readRDS("models/boost/seba-caprino_model.rds")
+
+predictions<-predict(goat_model,dataset)
+cm<-caret::confusionMatrix(reference=as.factor(dataset$Activity),predictions,mode="everything")
+cm$overall
+?confusionMatrix
+```
+
+
+
+## Calculate MACRO performance metrics.
+Kappa and Accuracy are the same as in caret confusion matrix. However, sens, spec and prec can differ when using MACRO or MICRO.
+
+```{r}
+macro_test_results<-data.frame(observations=as.factor(dataset$Activity),predictions=predictions)
+rbind(accuracy(macro_test_results, 
+         estimate=predictions,
+         truth=observations,
+         estimator="macro"),
+
+kap(macro_test_results,
+         estimate=predictions,
+         truth=observations,
+         estimator="macro"),
+
+sensitivity(macro_test_results,
+         estimate=predictions,
+         truth=observations,
+         estimator="macro"),
+
+
+specificity(macro_test_results,
+         estimate=predictions,
+         truth=observations,
+         estimator="macro"),
+
+precision(macro_test_results,
+         estimate=predictions,
+         truth=observations,
+         estimator="macro")
+) %>% reshape2::melt() %>% select(.metric,value)
+```
+
+
+## calculate macro performance metrics per class
+
+According the these results, the metrics provided by the `caret` package are correct since there is no difference between MACRO and MACRO.
+Notice, however, the problem for calculating specificity per class using the `yardstick` package
+
+```{r warning=FALSE}
+macro_test_results<-data.frame(observations=as.factor(dataset$Activity),predictions=predictions)
+
+
+sensitivity(macro_test_results %>% filter(observations=="R"),
+         estimate=predictions,
+         truth=observations,
+         estimator="macro") 
+
+precision(macro_test_results %>% filter(predictions=="R"),
+         estimate=predictions,
+         truth=observations,
+         estimator="macro") 
+
+```
+
+```{r}
+macro_test_results %>% precision(predictions,observations)
+```
+
+```{r}
+(p*r)/(p+r) *2
+
+
+f_meas(macro_test_results,
+         estimate=predictions,
+         truth=observations,
+         estimator="macro")
+
+spec(macro_test_results %>% filter((observations!="G" & predictions!="G") | 
+                                            (observations!="G" & predictions=="G")
+                                          ),
+         estimate=predictions,
+         truth=observations, event_level = "second",
+         estimator="micro")
+
+macro_test_results %>% summarise(tn=sum(observations!="G" & predictions!="G"),fp= sum(
+                                            (observations!="G" & predictions=="G")),spec=tn/(tn+fp))
+
+
+
+```
+
+
+## Resample
+
+The idea is to apply and 1 vs all approach. We convert each class to 1 and the rest to 0 and then we apply the performance metric.
+```{r}
+goat_model$pred %>% mutate(pred=ifelse(pred=="G",1,0),
+                           obs=ifelse(obs=="G",1,0)) %>% mutate(pred=as.factor(pred),obs=as.factor(obs)) %>%
+  group_by(Resample) %>% 
+    yardstick::specificity(obs,pred) %>% summarise(reSens_G_Mean=mean(.estimate),reSens_G_sd=sd(.estimate)) 
+   
+```
+
+
+```{r warning=FALSE}
+  goat_model$pred %>% group_by(Resample,obs) %>% 
+    yardstick::specificity(obs,pred) %>% group_by(obs) %>% 
+    summarise(reSens_G_Mean=mean(.estimate),reSens_G_sd=sd(.estimate)) %>% 
+    filter(obs == "G") %>% select(-obs)
+```
+
+
