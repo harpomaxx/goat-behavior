@@ -332,8 +332,8 @@ print(z)
 ```
 
 # Calculate Resampling results per experiment 
+use `dvc exp show --drop ".*" --keep "re.*|Experiment" --csv >resample_results.csv`
 ```{r}
-#dvc exp show -n 2 --drop ".*" --keep "re.*|Experiment" --csv >resample.csv
 
 options(ztable.type = 'viewer')
 experiments <- c("5f-1s", "10f-1s", "15f-1s", "20f-1s", "25f-1s")
@@ -347,8 +347,7 @@ experiments_no_log <-
     "35f-1s-no-log-1d-loocvtune"
     )
 experiments <- c(experiments_no_log)
-r2 <- readr::read_csv("../../../resample.csv")
-r2 <- readr::read_csv("../../../resample-borrar.csv")
+r2 <- readr::read_csv("../../../resample_results.csv")
 r2 <- r2 %>% filter(Experiment %in% experiments)
 
 #options(ztable.type = 'latex')
@@ -535,8 +534,9 @@ table_15f_1s_no_log
 
 
 # Calculate LOOCV results
+
+use `dvc exp show --drop ".*" --keep "loo.*mean_*|Experiment" --csv >loocv_results.csv`
 ```{r}
-#dvc exp show -n 2 --drop ".*" --keep "loo.*mean_*|Experiment" --csv >loocv_results.csv
 library(ztable)
 options(ztable.type='viewer')
 
@@ -561,8 +561,9 @@ create_loocv_restable("5f-1s-no-log-1d-loocvtune",r)
 
 # Calculate Test results experiments (per animal)
 
+use `dvc exp show  --drop ".*" --keep "Testloo.*mean_*|Experiment" --csv >Testloo_results.csv`
+
 ```{r}
-#dvc exp show  --drop ".*" --keep "Testloo.*mean_*|Experiment" --csv >test_results.csv
 library(ztable)
 options(ztable.type='viewer')
 r<-readr::read_csv("../../../Testloo_results.csv")
@@ -574,10 +575,12 @@ options(ztable.zebra=NULL)
 options(ztable.type = 'viewer')
 create_loocv_restable("5f-1s-no-log-1d-loocvtune",r)  
 ```
+
+
 # Calculate test results experiments (considering the complete testdataset as a whole)
 
+use `dvc exp show  --drop ".*" --keep "test.*|Experiment" --csv >test_results.csv`
 ```{r}
-#dvc exp show  --drop ".*" --keep "Testloo.*mean_*|Experiment" --csv >test_results.csv
 library(ztable)
 options(ztable.type='viewer')
 r<-readr::read_csv("../../../test_results.csv")
