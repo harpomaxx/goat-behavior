@@ -102,7 +102,7 @@ if (opt$input %>% is.null()  ||
   # We convert each class to 1 and the rest to 0 and then we apply the performance metric.
   ### Class G
   
-  G_preds<-bost_model$pred %>% 
+  G_preds<-boost_model$pred %>% 
     mutate(pred=ifelse(pred=="G",1,0), obs=ifelse(obs=="G",1,0)) %>%
     mutate(pred=as.factor(pred),obs=as.factor(obs))
   sens<-G_preds %>% group_by(Resample) %>% 
@@ -119,7 +119,7 @@ if (opt$input %>% is.null()  ||
   
   ### Class GM
   
-  GM_preds<-bost_model$pred %>% 
+  GM_preds<-boost_model$pred %>% 
     mutate(pred=ifelse(pred=="GM",1,0), obs=ifelse(obs=="GM",1,0)) %>%
     mutate(pred=as.factor(pred),obs=as.factor(obs))
   sens<-GM_preds %>% group_by(Resample) %>% 
@@ -136,7 +136,7 @@ if (opt$input %>% is.null()  ||
    
   ### Class R
   
-  R_preds<-bost_model$pred %>% 
+  R_preds<-boost_model$pred %>% 
     mutate(pred=ifelse(pred=="R",1,0), obs=ifelse(obs=="R",1,0)) %>%
     mutate(pred=as.factor(pred),obs=as.factor(obs))
   sens<-R_preds %>% group_by(Resample) %>% 
@@ -153,7 +153,7 @@ if (opt$input %>% is.null()  ||
   
   ### Class W
   
-  W_preds<-bost_model$pred %>% 
+  W_preds<-boost_model$pred %>% 
     mutate(pred=ifelse(pred=="W",1,0), obs=ifelse(obs=="W",1,0)) %>%
     mutate(pred=as.factor(pred),obs=as.factor(obs))
   sens<-W_preds %>% group_by(Resample) %>% 
@@ -175,31 +175,49 @@ if (opt$input %>% is.null()  ||
   
   
   ## Save results MACRO results for test_datataset
-  c(results$overall,metrics$macro) as.yaml %>%
+  c(results$overall,results$macro) %>% as.yaml %>%
     write("metrics/train_model_metrics_macro_overall.yaml")
   
   ## save metrics per class
   results$cm %>% as.data.frame() %>% tibble::rownames_to_column("Activity") %>% 
     filter(Activity=="Class: G") %>% 
     select("Sensitivity","Specificity","Precision","Balanced Accuracy") %>%
+    rename(testSens_G = Sensitivity, 
+           testSpec_G = Specificity, 
+           testPrec_G = Precision, 
+           testBacc_G = `Balanced Accuracy`) %>%
+    
+    
     as.yaml() %>% 
     write("metrics/train_model_metrics_G.yaml")
   
   results$cm %>% as.data.frame() %>% tibble::rownames_to_column("Activity") %>% 
     filter(Activity =="Class: GM") %>% 
     select("Sensitivity","Specificity","Precision","Balanced Accuracy") %>%
+    rename(testSens_GM = Sensitivity, 
+           testSpec_GM = Specificity, 
+           testPrec_GM = Precision, 
+           testBacc_GM = `Balanced Accuracy`) %>%
     as.yaml() %>% 
     write("metrics/train_model_metrics_GM.yaml")
   
   results$cm %>% as.data.frame() %>% tibble::rownames_to_column("Activity") %>% 
     filter(Activity =="Class: W") %>% 
     select("Sensitivity","Specificity","Precision","Balanced Accuracy") %>%
+    rename(testSens_W = Sensitivity, 
+           testSpec_W = Specificity, 
+           testPrec_W = Precision, 
+           testBacc_W = `Balanced Accuracy`) %>%
     as.yaml() %>% 
     write("metrics/train_model_metrics_W.yaml")
   
   results$cm %>% as.data.frame() %>% tibble::rownames_to_column("Activity") %>% 
     filter(Activity =="Class: R") %>% 
     select("Sensitivity","Specificity","Precision","Balanced Accuracy") %>%
+    rename(testSens_R = Sensitivity, 
+           testSpec_R = Specificity, 
+           testPrec_R = Precision, 
+           testBacc_R = `Balanced Accuracy`) %>%
     as.yaml() %>% 
     write("metrics/train_model_metrics_R.yaml")
   

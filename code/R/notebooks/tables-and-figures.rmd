@@ -9,6 +9,162 @@ library(yaml)
 library(dplyr)
 library(ggplot2)
 ```
+
+# Functions
+## Function for resample table
+```{r}
+
+create_resampling_restable <- function (experiment_id, experiments_data){
+library(ztable)
+library(tibble)
+activity_metrics <-
+  experiments_data %>% filter(Experiment == experiment_id) %>% select(
+    Experiment,
+    reSens_R_Mean,
+    reSens_GM_Mean,
+    reSens_W_Mean,
+    reSens_G_Mean,
+    rePrec_R_Mean,
+    rePrec_GM_Mean,
+    rePrec_W_Mean,
+    rePrec_G_Mean,
+    reSpec_R_Mean,
+    reSpec_GM_Mean,
+    reSpec_W_Mean,
+    reSpec_G_Mean
+  ) %>%
+  tidyr::pivot_longer(
+    !Experiment,
+    names_to = c("Activity", "Metric"),
+    names_pattern = "re(.*)_(.*)_Mean",
+    values_to = "count"
+  ) %>%
+  tidyr::pivot_wider(names_from = Metric, values_from = c(count)) %>% as.data.frame() %>% select(!Experiment)
+
+all_metrics <-
+  experiments_data %>% filter(.data$Experiment == experiment_id) %>% select(
+    Experiment,
+    reAcc_Mean,
+    reKappa_Mean,
+    reSens_Mean,
+    reSens_Mean,
+    rePrec_Mean,
+    reSpec_Mean
+  ) %>% t() %>% as.data.frame()
+
+all_metrics <- all_metrics %>% slice(2:6)
+all_metrics$V1 <- as.double(all_metrics$V1)
+all_metrics <- all_metrics %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>% rownames_to_column("Metrics")
+
+all_metrics$Metrics <- c("Accuracy",
+                         "Kappa",
+                         "Sensitivity",
+                         "Specificity",
+                         "Precision")
+
+activity_metrics <- activity_metrics %>% rename(Metrics = "Activity")
+activity_metrics$Metrics <- c("Sensitivity", "Precision", "Specificity")
+
+names(all_metrics) <- names(activity_metrics)
+rgroup = c("Overall", "Per Activity")
+n.rgroup = c(5, 3)
+
+table_results <- 
+rbind(all_metrics, activity_metrics) %>%
+  ztable(align = "llllll") %>% spanCol(row = 2, from = 3, to =
+                                                         6) %>%
+  spanCol(row = 3, from = 3, to = 6) %>%
+  spanCol(row = 4, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 6, from = 3, to = 6) %>%
+  addrgroup(rgroup = rgroup,
+            n.rgroup = n.rgroup,
+            cspan.rgroup = 1) %>% hlines(add = c(5))
+
+table_results
+}
+```
+## Function for loocv table
+```{r}
+create_loocv_restable <- function (experiment_id, experiments_data){
+library(ztable)
+library(tibble)
+activity_metrics <-
+  experiments_data %>% filter(Experiment == experiment_id) %>% select(
+    Experiment,
+    R_Sens,
+    GM_Sens,
+    W_Sens,
+    G_Sens,
+    R_Prec,
+    GM_Prec,
+    W_Prec,
+    G_Prec,
+    R_Spec,
+    GM_Spec,
+    W_Spec,
+    G_Spec
+  ) %>%
+  tidyr::pivot_longer(
+    !Experiment,
+    names_to = c("Activity", "Metrics"),
+    names_pattern = "^(.*)_(.*)$",
+    values_to = "count"
+  ) %>%
+  tidyr::pivot_wider(names_from = Activity, values_from = c(count)) %>% as.data.frame() %>% select(!Experiment)
+
+all_metrics <-
+  experiments_data %>% filter(.data$Experiment == experiment_id) %>% select(
+    Experiment,
+    looAcc_mean_macro,
+    looKappa_mean_macro,
+    looSens_mean_macro,
+    looPrec_mean_macro,
+    looSpec_mean_macro,
+  ) %>% t() %>% as.data.frame()
+
+all_metrics <- all_metrics %>% slice(2:6)
+all_metrics$V1 <- as.double(all_metrics$V1)
+all_metrics <- all_metrics %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>% rownames_to_column("Metrics")
+
+all_metrics$Metrics <- c("Accuracy",
+                         "Kappa",
+                         "Sensitivity",
+                         "Specificity",
+                         "Precision")
+
+#activity_metrics <- activity_metrics %>% rename(Metrics = "Activity")
+activity_metrics$Metrics <- c("Sensitivity", "Precision", "Specificity")
+
+names(all_metrics) <- names(activity_metrics)
+rgroup = c("Overall", "Per Activity")
+n.rgroup = c(5, 3)
+
+table_results <- 
+rbind(all_metrics, activity_metrics) %>%
+  ztable(align = "llllll") %>% spanCol(row = 2, from = 3, to =
+                                                         6) %>%
+  spanCol(row = 3, from = 3, to = 6) %>%
+  spanCol(row = 4, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 6, from = 3, to = 6) %>%
+  addrgroup(rgroup = rgroup,
+            n.rgroup = n.rgroup,
+            cspan.rgroup = 1) %>% hlines(add = c(5))
+
+table_results
+}
+```
+
+
 ```{r}
 dataset %>% group_by(Anim) %>% count() %>% select(Anim)
 dataset$Anim <- as.character(dataset$Anim)
@@ -175,86 +331,7 @@ z<-features_set %>% select(-Type) %>% ztable(booktabs = T) %>%
 print(z)
 ```
 
-# Resampling results per experiment 
-
-## Function
-```{r}
-
-create_resampling_restable <- function (experiment_id, experiments_data){
-library(ztable)
-library(tibble)
-activity_metrics <-
-  experiments_data %>% filter(Experiment == experiment_id) %>% select(
-    Experiment,
-    reSens_R_Mean,
-    reSens_GM_Mean,
-    reSens_W_Mean,
-    reSens_G_Mean,
-    rePrec_R_Mean,
-    rePrec_GM_Mean,
-    rePrec_W_Mean,
-    rePrec_G_Mean,
-    reSpec_R_Mean,
-    reSpec_GM_Mean,
-    reSpec_W_Mean,
-    reSpec_G_Mean
-  ) %>%
-  tidyr::pivot_longer(
-    !Experiment,
-    names_to = c("Activity", "Metric"),
-    names_pattern = "re(.*)_(.*)_Mean",
-    values_to = "count"
-  ) %>%
-  tidyr::pivot_wider(names_from = Metric, values_from = c(count)) %>% as.data.frame() %>% select(!Experiment)
-
-all_metrics <-
-  experiments_data %>% filter(.data$Experiment == experiment_id) %>% select(
-    Experiment,
-    reAcc_Mean,
-    reKappa_Mean,
-    reSens_Mean,
-    reSens_Mean,
-    rePrec_Mean,
-    reSpec_Mean
-  ) %>% t() %>% as.data.frame()
-
-all_metrics <- all_metrics %>% slice(2:6)
-all_metrics$V1 <- as.double(all_metrics$V1)
-all_metrics <- all_metrics %>%
-  add_column(all_metrics) %>%
-  add_column(all_metrics) %>%
-  add_column(all_metrics) %>% rownames_to_column("Metrics")
-
-all_metrics$Metrics <- c("Accuracy",
-                         "Kappa",
-                         "Sensitivity",
-                         "Specificity",
-                         "Precision")
-
-activity_metrics <- activity_metrics %>% rename(Metrics = "Activity")
-activity_metrics$Metrics <- c("Sensitivity", "Precision", "Specificity")
-
-names(all_metrics) <- names(activity_metrics)
-rgroup = c("Overall", "Per Activity")
-n.rgroup = c(5, 3)
-
-table_results <- 
-rbind(all_metrics, activity_metrics) %>%
-  ztable(align = "llllll") %>% spanCol(row = 2, from = 3, to =
-                                                         6) %>%
-  spanCol(row = 3, from = 3, to = 6) %>%
-  spanCol(row = 4, from = 3, to = 6) %>%
-  spanCol(row = 5, from = 3, to = 6) %>%
-  spanCol(row = 5, from = 3, to = 6) %>%
-  spanCol(row = 6, from = 3, to = 6) %>%
-  addrgroup(rgroup = rgroup,
-            n.rgroup = n.rgroup,
-            cspan.rgroup = 1) %>% hlines(add = c(5))
-
-table_results
-}
-```
-## Tables
+# Calculate Resampling results per experiment 
 ```{r}
 #dvc exp show -n 2 --drop ".*" --keep "re.*|Experiment" --csv >resample.csv
 
@@ -271,6 +348,7 @@ experiments_no_log <-
     )
 experiments <- c(experiments_no_log)
 r2 <- readr::read_csv("../../../resample.csv")
+r2 <- readr::read_csv("../../../resample-borrar.csv")
 r2 <- r2 %>% filter(Experiment %in% experiments)
 
 #options(ztable.type = 'latex')
@@ -282,6 +360,9 @@ create_resampling_restable("20f-1s-no-log-1d-loocvtune",r2)
 create_resampling_restable("25f-1s-no-log-1d-loocvtune",r2)
 create_resampling_restable("30f-1s-no-log-1d-loocvtune",r2)
 create_resampling_restable("35f-1s-no-log-1d-loocvtune",r2)
+```
+```{r}
+create_resampling_restable("new-metrics-implementation",r2)  
 ```
 
 ## Plots
@@ -452,85 +533,10 @@ table_15f_1s_no_log
 ```
 
 
-# LOOCV results experiments (per animal)
-## Function
+
+# Calculate LOOCV results
 ```{r}
-create_loocv_restable <- function (experiment_id, experiments_data){
-library(ztable)
-library(tibble)
-activity_metrics <-
-  experiments_data %>% filter(Experiment == experiment_id) %>% select(
-    Experiment,
-    R_Sens,
-    GM_Sens,
-    W_Sens,
-    G_Sens,
-    R_Prec,
-    GM_Prec,
-    W_Prec,
-    G_Prec,
-    R_Spec,
-    GM_Spec,
-    W_Spec,
-    G_Spec
-  ) %>%
-  tidyr::pivot_longer(
-    !Experiment,
-    names_to = c("Activity", "Metrics"),
-    names_pattern = "^(.*)_(.*)$",
-    values_to = "count"
-  ) %>%
-  tidyr::pivot_wider(names_from = Activity, values_from = c(count)) %>% as.data.frame() %>% select(!Experiment)
-
-all_metrics <-
-  experiments_data %>% filter(.data$Experiment == experiment_id) %>% select(
-    Experiment,
-    overall_Acc,
-    overall_Kappa,
-    micro_Sens_micro,
-    micro_Prec_micro,
-    micro_Spec_micro,
-  ) %>% t() %>% as.data.frame()
-
-all_metrics <- all_metrics %>% slice(2:6)
-all_metrics$V1 <- as.double(all_metrics$V1)
-all_metrics <- all_metrics %>%
-  add_column(all_metrics) %>%
-  add_column(all_metrics) %>%
-  add_column(all_metrics) %>% rownames_to_column("Metrics")
-
-all_metrics$Metrics <- c("Accuracy",
-                         "Kappa",
-                         "Sensitivity",
-                         "Specificity",
-                         "Precision")
-
-#activity_metrics <- activity_metrics %>% rename(Metrics = "Activity")
-activity_metrics$Metrics <- c("Sensitivity", "Precision", "Specificity")
-
-names(all_metrics) <- names(activity_metrics)
-rgroup = c("Overall", "Per Activity")
-n.rgroup = c(5, 3)
-
-table_results <- 
-rbind(all_metrics, activity_metrics) %>%
-  ztable(align = "llllll") %>% spanCol(row = 2, from = 3, to =
-                                                         6) %>%
-  spanCol(row = 3, from = 3, to = 6) %>%
-  spanCol(row = 4, from = 3, to = 6) %>%
-  spanCol(row = 5, from = 3, to = 6) %>%
-  spanCol(row = 5, from = 3, to = 6) %>%
-  spanCol(row = 6, from = 3, to = 6) %>%
-  addrgroup(rgroup = rgroup,
-            n.rgroup = n.rgroup,
-            cspan.rgroup = 1) %>% hlines(add = c(5))
-
-table_results
-}
-```
-
-```{r}
-#dvc exp show -n 2 --drop ".*" --keep ".*train.*loo.*mean_*|Experiment" --csv >loocv_results.csv
+#dvc exp show -n 2 --drop ".*" --keep "loo.*mean_*|Experiment" --csv >loocv_results.csv
 library(ztable)
 options(ztable.type='viewer')
 
@@ -544,45 +550,47 @@ experiments_no_log <-
     "35f-1s-no-log-1d-loocvtune"
     )
 experiments <- c(experiments_no_log)
-
 r<-readr::read_csv("../../../loocv_results.csv")
 r <- r %>% filter(Experiment %in% experiments)
-names(r)<-names(r) %>% gsub(pattern = "metrics/train_model_loocv_metrics_(.*).yaml:(.*)_mean", replacement = "\\1_\\2", x = names(r))
-names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
+names(r)<-names(r)  %>% gsub(pattern = "loo(.*)_(.*)_mean", replacement = "\\2_\\1", x = names(r))
 
-#r<- r %>% filter(!is.na(exp))
-#ztable(r %>% as.data.frame() %>% select(c(1,2,3,4,5,8,9,10,11))) %>% makeHeatmap() 
-
-
-options(ztable.type = 'latex')
+#options(ztable.type = 'latex')
 options(ztable.zebra=NULL)
-create_loocv_restable("15f-1s-no-log-1d-loocvtune",r)  
+create_loocv_restable("5f-1s-no-log-1d-loocvtune",r)  
 ```
 
-# Test results experiments (per animal)
-
-
-
+# Calculate Test results experiments (per animal)
 
 ```{r}
-#dvc exp show  --drop ".*" --keep ".*test.*loo.*mean_*|Experiment" --csv >test_results.csv
+#dvc exp show  --drop ".*" --keep "Testloo.*mean_*|Experiment" --csv >test_results.csv
+library(ztable)
+options(ztable.type='viewer')
+r<-readr::read_csv("../../../Testloo_results.csv")
+names(r)<-names(r)  %>% gsub(pattern = "Testloo(.*)_(.*)_mean", replacement = "\\2_\\1", x = names(r))
+names(r)<-names(r)  %>% gsub(pattern = "Test(.*)", replacement = "\\1", x = names(r))
+
+names(r)
+options(ztable.zebra=NULL)
+options(ztable.type = 'viewer')
+create_loocv_restable("5f-1s-no-log-1d-loocvtune",r)  
+```
+# Calculate test results experiments (considering the complete testdataset as a whole)
+
+```{r}
+#dvc exp show  --drop ".*" --keep "Testloo.*mean_*|Experiment" --csv >test_results.csv
 library(ztable)
 options(ztable.type='viewer')
 r<-readr::read_csv("../../../test_results.csv")
+names(r)<-names(r)  %>% gsub(pattern = "test(.*)_(.*)", replacement = "\\2_\\1", x = names(r))
+names(r)<-names(r)  %>% gsub(pattern = "test(.*)", replacement = "\\1", x = names(r))
 
-#names(r)<-names(r) %>% gsub(pattern = "metrics/test_model_loocv_metrics_(.*).yaml:(.*)_(mean|sd)", replacement = "\\1_\\2_\\3", x = names(r))
-names(r)<-names(r) %>% gsub(pattern = "metrics/test_model_loocv_metrics_(.*).yaml:(.*)_mean", replacement = "\\1_\\2", x = names(r))
-names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
-
-#r<- r %>% filter(!is.na(exp))
-#ztable(r %>% as.data.frame() %>% select(c(1,2,3,4,5,8,9,10,11))) %>% makeHeatmap() 
-
-r %>% filter(grepl(pattern = ".*-no-log.*",Experiment))
+names(r)<-names(r)  %>% gsub(pattern = "macro_(.*)", replacement = "loo\\1_mean_macro", x = names(r))
+names(r)
+# looSens_mean_macro
 options(ztable.zebra=NULL)
 options(ztable.type = 'viewer')
-create_loocv_restable("15f-1s-no-log-1d-loocvtune",r)  
+create_loocv_restable("5f-1s-no-log-1d-loocvtune",r)  
 ```
-
 ```{r}
 dataset <- readr::read_delim("data/split/seba-caprino_loocv.tsv",delim='\t')
 goat_model <- readRDS("models/boost/seba-caprino_model.rds")

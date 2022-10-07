@@ -87,8 +87,8 @@ predict_activity<-function(model,dataset){
     select(-.estimator) %>% as.list()
   
   overall <- cm$overall[1:2] %>% as.list() 
-  names(overall)<-c("Acc_macro","Kappa_macro")
-  names(overall_macro)<-c("Sens_macro","Spec_macro","Prec_macro")
+  names(overall)<-c("testAcc_macro","testKappa_macro")
+  names(overall_macro)<-c("testSens_macro","testSpec_macro","testPrec_macro")
   list(overall=overall, 
        macro=overall_macro,
        cm=cm$byClass,

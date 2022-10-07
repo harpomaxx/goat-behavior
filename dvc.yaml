@@ -93,6 +93,8 @@ stages:
         cache: false
     - metrics/train_model_resample_metrics_GM.yaml:
         cache: false
+    - metrics/train_model_metrics_macro_overall.yaml:
+        cache: false
   train_model_loocv:
     cmd: Rscript code/R/scripts/060_train_model_loocv_cmd.R 
       --input data/split/seba-caprino_loocv.tsv
@@ -119,11 +121,9 @@ stages:
         cache: false
     - metrics/train_model_loocv_metrics_GM.yaml:
         cache: false
-    - metrics/train_model_loocv_metrics_overall.yaml:
+    - metrics/train_model_loocv_metrics_macro_overall.yaml:
         cache: false
-    - metrics/train_model_loocv_metrics_micro.yaml:
-        cache: false
-    - metrics/train_model_loocv_metrics_macro.yaml:
+    - metrics/train_model_loocv_metrics_avg_all.yaml:
         cache: false
         
   test_model_loocv:
@@ -152,11 +152,9 @@ stages:
         cache: false
     - metrics/test_model_loocv_metrics_GM.yaml:
         cache: false
-    - metrics/test_model_loocv_metrics_micro.yaml:
+    - metrics/test_model_loocv_metrics_macro_overall.yaml:
         cache: false
-    - metrics/test_model_loocv_metrics_macro.yaml:
-        cache: false
-    - metrics/test_model_loocv_metrics_overall.yaml:
+    - metrics/test_model_loocv_metrics_avg_all.yaml:
         cache: false        
         
   calculate_shap:

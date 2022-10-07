@@ -179,7 +179,7 @@ loocv_peformance_metrics<-function(loocv_results){
     x$byclass)
   
   rownames <- do.call(rbind, byclass)   %>% rownames()
-  
+  # calculate metrics per animal and class
   byclass<-do.call(rbind, byclass) %>% as.data.frame() %>% 
     tibble::add_column(class =rownames) %>% 
     group_by(class) %>% 
