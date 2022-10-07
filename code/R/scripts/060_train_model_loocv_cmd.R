@@ -137,7 +137,7 @@ if (opt$input %>% is.null()  ||
   #metrics$overall %>% as.yaml %>%
   #write("metrics/train_model_loocv_metrics_macro_overall.yaml")
   
-  ## Save model 
+  ## Save results 
   dir.create(dirname(opt$results), showWarnings = FALSE)
   saveRDS(results, file = paste0(opt$results,"_model_train_loocv_results.rds"))
   

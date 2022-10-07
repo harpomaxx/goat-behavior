@@ -1,5 +1,5 @@
 #!/bin/Rscript
-#  test model 
+#  test model per average.
 
 source("code/R/functions/train_model_loocv.R")
 suppressPackageStartupMessages(library(optparse))

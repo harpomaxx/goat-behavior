@@ -14,6 +14,7 @@ suppressWarnings(suppressPackageStartupMessages(library(yardstick)))
 ```
 
 ```{r}
+source("code/R/functions/train_model_loocv.R")
 test_results <- readRDS("models/test_loocv/seba-caprino_model_test_loocv_results.rds")
 byclass <- lapply(test_results,function(x) x$byclass)
 
@@ -30,6 +31,12 @@ byclass <- lapply(test_results,function(x) x$byclass)
               looPrec_mean = mean(`Precision`, na.rm =TRUE), 
               looPrec_sd =sd(`Precision`, na.rm=TRUE),
     )
+  
+  
+metrics<-loocv_peformance_metrics(test_results)
+
+
+c(metrics$overall,metrics$macro)
 ```
 # Calculate Caret confusion metric
 
@@ -42,9 +49,15 @@ goat_model <- readRDS("models/boost/seba-caprino_model.rds")
 predictions<-predict(goat_model,dataset)
 cm<-caret::confusionMatrix(reference=as.factor(dataset$Activity),predictions,mode="everything")
 cm$overall
-?confusionMatrix
+
 ```
 
+```{r}
+source("code/R/functions/train_model.R")
+results<-predict_activity(model = goat_model,dataset = dataset)
+
+results$macro 
+```
 
 
 ## Calculate MACRO performance metrics.
@@ -106,28 +119,7 @@ precision(macro_test_results %>% filter(predictions=="R"),
 macro_test_results %>% precision(predictions,observations)
 ```
 
-```{r}
-(p*r)/(p+r) *2
-
-
-f_meas(macro_test_results,
-         estimate=predictions,
-         truth=observations,
-         estimator="macro")
-
-spec(macro_test_results %>% filter((observations!="G" & predictions!="G") | 
-                                            (observations!="G" & predictions=="G")
-                                          ),
-         estimate=predictions,
-         truth=observations, event_level = "second",
-         estimator="micro")
-
-macro_test_results %>% summarise(tn=sum(observations!="G" & predictions!="G"),fp= sum(
-                                            (observations!="G" & predictions=="G")),spec=tn/(tn+fp))
-
-
-
-```
+`
 
 
 ## Resample

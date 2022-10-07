@@ -2,6 +2,7 @@ suppressPackageStartupMessages(library(caret))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(tibble))
 suppressPackageStartupMessages(library(catboost))
+suppressPackageStartupMessages(library(yardstick))
 source("code/R/functions/caret_params.R")
 
 
@@ -64,7 +65,32 @@ predict_activity<-function(model,dataset){
   predictions<-predict(model,dataset)  
   cm <- caret::confusionMatrix(reference=dataset$Activity %>% as.factor(),
                                predictions %>% as.factor() )
-  list(overall=cm$overall,
+  
+  pred_vs_obs<-data.frame(observations=as.factor(dataset$Activity),predictions=predictions)
+  overall_macro<-rbind(
+        yardstick::sensitivity(pred_vs_obs,
+                    estimate=predictions,
+                    truth=observations,
+                    estimator="macro"),
+        
+        
+        yardstick::specificity(pred_vs_obs,
+                    estimate=predictions,
+                    truth=observations,
+                    estimator="macro"),
+        
+        yardstick::precision(pred_vs_obs,
+                  estimate=predictions,
+                  truth=observations,
+                  estimator="macro")
+  )%>% tidyr::pivot_wider(names_from = ".metric",values_from = ".estimate") %>%
+    select(-.estimator) %>% as.list()
+  
+  overall <- cm$overall[1:2] %>% as.list() 
+  names(overall)<-c("Acc_macro","Kappa_macro")
+  names(overall_macro)<-c("Sens_macro","Spec_macro","Prec_macro")
+  list(overall=overall, 
+       macro=overall_macro,
        cm=cm$byClass,
        predictions=predictions, 
        tab=cm$table)

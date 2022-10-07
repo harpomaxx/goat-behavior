@@ -265,8 +265,6 @@ loocv_peformance_metrics<-function(loocv_results){
                       looPrec_sd_macro = sd(.estimate, na.rm = TRUE)
                       )
   )
- 
-  
   list(
     byclass = byclass,
     overall = list(
