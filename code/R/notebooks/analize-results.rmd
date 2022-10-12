@@ -36,7 +36,8 @@ byclass <- lapply(test_results,function(x) x$byclass)
 metrics<-loocv_peformance_metrics(test_results)
 
 
-c(metrics$overall,metrics$macro)
+a<-c(metrics$overall,metrics$macro)
+names(a) %>% gsub(pattern = "(loo)(*.)", replacement = "\\1Test\\2", x = names(a))
 ```
 # Calculate Caret confusion metric
 
@@ -56,7 +57,9 @@ cm$overall
 source("code/R/functions/train_model.R")
 results<-predict_activity(model = goat_model,dataset = dataset)
 
-results$macro 
+results$overall
+results$macro
+
 ```
 
 
