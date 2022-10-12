@@ -1,0 +1,13 @@
+TestlooAcc_mean_macro: 0.8301122
+TestlooAcc_sd_macro: 0.0729404
+TestlooKappa_mean_macro: 0.6101068
+TestlooKappa_sd_macro: 0.1702986
+TestlooBAcc_mean_macro: .nan
+TestlooBAcc_sd_macro: .na.real
+TestlooSpec_mean_macro: 0.9216276
+TestlooSpec_sd_macro: 0.033045
+TestlooSens_mean_macro: 0.7499004
+TestlooSens_sd_macro: 0.1530142
+TestlooPrec_mean_macro: 0.7528178
+TestlooPrec_sd_macro: 0.127746
+

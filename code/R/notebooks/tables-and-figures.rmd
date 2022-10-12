@@ -350,7 +350,7 @@ experiments <- c(experiments_no_log)
 r2 <- readr::read_csv("../../../resample_results.csv")
 r2 <- r2 %>% filter(Experiment %in% experiments)
 
-#options(ztable.type = 'latex')
+options(ztable.type = 'latex')
 options(ztable.zebra=NULL)
 create_resampling_restable("5f-1s-no-log-1d-loocvtune",r2)  
 create_resampling_restable("10f-1s-no-log-1d-loocvtune",r2)
@@ -377,7 +377,7 @@ experiments_no_log <-
     "35f-1s-no-log-1d-loocvtune"
     )
 experiments <- c(experiments_no_log)
-r2 <- readr::read_csv("../../../resample.csv")
+r2 <- readr::read_csv("../../../resample_results.csv")
 r2 <- r2 |> filter(Experiment %in% experiments)
 r2$id<-c(35,30,25,20,15,10,5) 
 r2 <- r2 %>% arrange(id)
