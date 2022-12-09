@@ -103,6 +103,72 @@ calculate_shap <- function(dataset,model,nsim=10) {
 }
 
 
+#' Calculate SHAP values for a given PREDICTED class
+#'
+#' @param dataset the dataset used for permutation during SHAP calculation
+#' @param new_data the new data we want to calculate SHAP
+#' @param model  the model used for explanation
+#' @param nsim  the number of Monte Carlos Simulations
+#' @param function_class a wrapper function to obtain only a particular class
+#' @param class_name the name of the class
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' 
+#' # Calculate the SHAP values for class G on new data
+#' shap_values_G <- calculate_shap_class(
+#' dataset, 
+#' new_data = newdata, 
+#' model = goat_model 
+#' nsim = 100, 
+#' function_class = p_function_G,
+#' class_name = "G")
+#' 
+#' 
+calculate_shap_class <- function(dataset, new_data, model,nsim=10, 
+                                 function_class, class_name = "G") {
+  trainset <- dataset %>%  na.omit() %>%
+    as.data.frame()
+  trainset_y <- dataset %>%
+    select(predictions) %>%
+    na.omit() %>%
+    unlist() %>%
+    unname()
+  
+  trainset<- trainset %>%select (-Activity,-predictions,-Anim)
+  new_data_class <- new_data 
+  
+  Anim <- new_data_class$Anim 
+  new_data_class <- new_data_class %>% select(-Anim)
+  
+  Activity <- new_data_class$Activity
+  new_data_class <- new_data_class %>% select(-Activity)
+  
+  predictions <- new_data_class$predictions
+  new_data_class <- new_data_class %>% select(-predictions)
+  
+  # Compute fast (approximate) Shapley values using 50 Monte Carlo repetitions
+  message(" - Calculating SHAP values for class ",class_name)
+  shap_values_class <-
+    fastshap::explain(
+      model,
+      X = trainset,
+      pred_wrapper = function_class,
+      nsim = nsim,
+      newdata = new_data_class,
+      .parallel = TRUE
+    )
+  
+  shap_values_class$class<-Activity
+  shap_values<-shap_values_class
+  
+  shap_values <- shap_values %>% tibble::add_column(Anim)
+  shap_values <- shap_values %>% tibble::add_column(predictions)
+  shap_values
+}
+
 shap_summary_plot<-function(shap_values){
   summary_plot <-
     shap_values %>% reshape2::melt() %>% group_by(class, variable) %>% 
@@ -135,12 +201,10 @@ shap_beeswarm_plot<-function(shap_values,dataset){
     theme_classic()+
     geom_hline(yintercept=0, 
                color = "red", size=0.5)+
-    ggforce::geom_sina(aes(x=variable,y=value,color=feature_value),size=2.2,bins=4,alpha=0.9,shape=15)+
+    ggforce::geom_sina(aes(x=variable,y=value,color=feature_value),size=0.5,bins=4,alpha=0.9,shape=15)+
     scale_colour_gradient(low = "yellow", high = "red", na.value = NA)+
     scale_colour_gradient(low = "skyblue", high = "orange", na.value = NA)+
     xlab("Feature")+ylab("SHAP value")+
     theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
   beeswarm_plot
-  
-  
 }
