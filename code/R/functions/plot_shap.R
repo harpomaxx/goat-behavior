@@ -1,5 +1,9 @@
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(ggExtra))
+
+
+
 
 range01 <- function(x){(x-min(x))/(max(x)-min(x))}
 
@@ -36,12 +40,96 @@ shap_beeswarm_plot<-function(shap_values,dataset){
     theme_classic()+
     geom_hline(yintercept=0, 
                color = "red", size=0.5)+
-    ggforce::geom_sina(aes(x=variable,y=value,color=feature_value),size=2.2,bins=4,alpha=0.9,shape=15)+
-    scale_colour_gradient(low = "yellow", high = "red", na.value = NA)+
-    scale_colour_gradient(low = "skyblue", high = "orange", na.value = NA)+
+    ggforce::geom_sina(aes(x=variable,y=value,fill=feature_value),color="black", size=2.4,bins=4,alpha=0.9,shape=22)+
+    scale_fill_gradient(low = "yellow", high = "red", na.value = NA)+
+    scale_fill_gradient(low = "skyblue", high = "orange", na.value = NA)+
     xlab("Feature")+ylab("SHAP value")+
     theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
   beeswarm_plot
   
   
+}
+
+
+#' Dependency plot for a particular feature. The plot considers 
+#' activities and FP/TP
+#'
+#' @param feature a particular feature to calculate
+#' @param dataset a dataset with goat information
+#' @param shap  a shap value dataset for each feature.
+#'
+#' @return a dependency plot for each activity considering the selected feature
+#' @export ggplot object
+#'
+#' @examples
+#' 
+#' dataset <-
+#' readr::read_delim("data/split/seba-caprino_loocv.tsv", 
+#'        delim = '\t')
+#' selected_variables <-
+#'  readr::read_delim(
+#'    "data/topnfeatures/seba-caprino_selected_features.tsv",
+#'    col_types = cols(),
+#'    delim = '\t'
+#'  )
+#' dataset <-
+#'  dataset %>% select(selected_variables$variable, 
+#'  Anim, 
+#'  Activity)
+#' goat_model <- readRDS("models/boost/seba-caprino_model.rds")
+#' shap_values <- calculate_shap(dataset, 
+#'                model = goat_model,
+#'                nsim = 30)
+#' dependency_plot_full(feature = "Steps",
+#'                      dataset = dataset,
+#'                      shap = shap_values) 
+
+dependency_plot_full <- function(feature, dataset, shap) {
+  newdata <- dataset %>% mutate({{ feature }} := range01(!!sym(feature)))
+  #activities <- c("G", "GM", "W", "R")
+  activities<-dataset %>% pull(Activity) %>% unique()
+  plots <- list()
+  for (activity in activities) {
+    s <- shap[which(shap_values$class == activity), 1:18]
+    x <- newdata[which(new_dataset$Activity == activity), ]
+    data <- cbind(
+      shap = (s %>% as.data.frame %>% select(feature)),
+      feature = (x %>% select(feature)),
+      tp = x %>% mutate(tp = ifelse(Activity == predictions, "TP", "FP")) %>% 
+        pull(tp)
+    )
+    names(data) <- c("shap", "feature", "tp")
+    p <- ggplot(data, aes(x = feature)) +
+      geom_point(aes(y = shap, color = tp), alpha = 0.3, size = 0.8) +
+      geom_smooth(aes(y = shap),
+                  se = FALSE,
+                  size = 0.5,
+                  linetype = "dashed") +
+      geom_hline(
+        yintercept = 0,
+        color = 'red',
+        size = 0.5,
+        alpha = 0.5
+      ) +
+      xlab(feature) +
+      labs(title = paste0("Activity ", activity)) +
+      ylab("SHAP Value") +
+      ylim(-0.1, 0.4) +
+      xlim(0, 1) +
+      theme_light() +
+      theme(legend.position = 'none')
+    
+    p1 <-
+      ggMarginal(
+        p,
+        type = "histogram",
+        fill = 'gray',
+        color = 'white',
+        size = 10,
+        xparams = list(bins = 25),
+        yparams = list(bins = 15)
+      ) #,margins='x')
+    plots[[activity]] <- p1
+  }
+  do.call(grid.arrange, c(plots, ncol = 4))
 }
