@@ -219,3 +219,38 @@ dependency_plot_anim<- function(feature,dataset,shap,anim){
   }
   do.call(grid.arrange, c(plots, ncol = length(activities)))
 }
+
+#' contribution plot for SHAP  values
+#'
+#' @param shap shap values for a particular class, animal, etc. 
+#' @param num_row the row number of the observation to show
+#'
+#' @return ggplot object
+#' @export
+#'
+#' @examples
+#' 
+#' shap_values_G <- calculate_shap_class(
+#' dataset = dataset, 
+#' new_data = newdata, 
+#' model= model, 
+#' nsim = 100, 
+#' function_class = p_function_G,
+#' class_name ="G")
+#' p1 <- contribution_plot(shap_values_G,num_row = 1) + 
+#' labs(title="Anim a13: class G (FN)", subtitle = "SHAP analysis for class G") 
+#' 
+contribution_plot <-function(s, num_row = 1){
+  s<-s[num_row,]
+  s <- data.frame(
+    Variable = names(s[,1:15]),
+    Importance = apply(s[,1:15], MARGIN = 2, FUN = function(x) sum(x))
+  )
+  ggplot(s, aes(Variable, Importance, Importance,fill=Importance) )+
+    geom_col() +
+    coord_flip() +
+    xlab("") +
+    ylab("Shapley value")+
+    theme_classic()+
+    theme(legend.position = 'none')
+}
