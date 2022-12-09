@@ -47,9 +47,8 @@ all_metrics <-
     reAcc_Mean,
     reKappa_Mean,
     reSens_Mean,
-    reSens_Mean,
-    rePrec_Mean,
-    reSpec_Mean
+    reSpec_Mean,
+    rePrec_Mean
   ) %>% t() %>% as.data.frame()
 
 all_metrics <- all_metrics %>% slice(2:6)
@@ -137,8 +136,8 @@ all_metrics <- all_metrics %>%
 all_metrics$Metrics <- c("Accuracy",
                          "Kappa",
                          "Sensitivity",
-                         "Specificity",
-                         "Precision")
+                         "Precision",
+                         "Specificity")
 
 #activity_metrics <- activity_metrics %>% rename(Metrics = "Activity")
 activity_metrics$Metrics <- c("Sensitivity", "Precision", "Specificity")
@@ -359,6 +358,8 @@ create_resampling_restable("20f-1s-no-log-1d-loocvtune",r2)
 create_resampling_restable("25f-1s-no-log-1d-loocvtune",r2)
 create_resampling_restable("30f-1s-no-log-1d-loocvtune",r2)
 create_resampling_restable("35f-1s-no-log-1d-loocvtune",r2)
+
+r2 %>% select(contains("R_Mean"))
 ```
 ```{r}
 create_resampling_restable("new-metrics-implementation",r2)  
@@ -591,8 +592,8 @@ names(r)<-names(r)  %>% gsub(pattern = "macro_(.*)", replacement = "loo\\1_mean_
 names(r)
 # looSens_mean_macro
 options(ztable.zebra=NULL)
-options(ztable.type = 'viewer')
-create_loocv_restable("5f-1s-no-log-1d-loocvtune",r)  
+options(ztable.type = 'latex')
+create_loocv_restable("15f-1s-no-log-1d-loocvtune",r)  
 ```
 ```{r}
 dataset <- readr::read_delim("data/split/seba-caprino_loocv.tsv",delim='\t')
@@ -606,4 +607,111 @@ p_act_res %>% mutate_all(.funs=funs(round(.,2))) %>%  select(R,GM,W,G)
 ```
 
 
+# Plot per animal
+
+```{r fig.height=2, fig.width=6}
+library(ggrepel)
+results <-
+  readRDS("../../../models/test_loocv/seba-caprino_model_test_loocv_results.rds")
+results[[9]]$byclass
+byclass <- lapply(results, function(x)
+  x$byclass)
+byclass
+rownames <- do.call(rbind, byclass)   %>% rownames()
+
+byclass <- do.call(rbind, byclass) %>% as.data.frame()
+byclass <- byclass %>% select(Sensitivity, Specificity, Precision)
+plot_data <-
+  byclass %>% tibble::rownames_to_column(var = "Activity") %>%
+  mutate(Activity = gsub(
+    x = Activity,
+    pattern = "Class..",
+    replacement = ""
+  )) %>%
+  mutate(Activity = gsub(Activity, pattern = '[.0-9]*', replacement = ''))
+
+plot_data$id <- rep(seq(1, 9), each = 4)
+sens_plot <- plot_data %>% ggplot() +
+  geom_point(aes(
+    y = Sensitivity,
+    x = as.factor(id),
+    color = Activity,
+    group = Activity
+  ),size=3) +
+  geom_path(aes(
+    y = Sensitivity,
+    x = as.factor(id),
+    color = Activity,
+    group = Activity
+  )) +
+  geom_hline(aes(yintercept = 0.75),linetype=2,color='gray')+
+ 
+  xlab("Anim") +
+  scale_x_discrete(
+    labels = c(
+      "1" = "a11",
+      "2" = "a6",
+      "3" = "a14",
+      "4" = "a13",
+      "5" = "a9",
+      "6" = "a12",
+      "7" = "a5",
+      "8" = "a7",
+      "9" = "a16"
+    )
+  ) +
+  theme_classic()+
+  theme(legend.position =  c("0.4",0.3))+
+    theme(
+        #axis.text.x=element_blank(), #remove x axis labels
+        #axis.ticks.x=element_blank(), #remove x axis ticks
+    
+        legend.direction = "horizontal",
+         legend.title=element_text(size=9),
+           legend.text=element_text(size=9))
+  #theme(legend.position = c("0.2",0.1),
+  #      legend.direction = "horizontal",
+  #      legend.key.size = unit(0.05, 'cm'))
+sens_plot
+
+```
+
+
+```{r fig.height=3, fig.width=9}
+#"a11" "a6"  "a14" "a13" "a9"  "a12" "a5"  "a7"  "a16"
+prec_plot <- plot_data %>% ggplot() +
+  geom_point(aes(
+    y = Precision,
+    x = as.factor(id),
+    color = Activity,
+    group = Activity
+  ),size=3) +
+  geom_path(aes(
+    y = Precision,
+    x = as.factor(id),
+    color = Activity,
+    group = Activity
+  )) +
+   geom_hline(aes(yintercept = 0.75),linetype=2,color='gray')+
+  xlab("Anim") +
+  scale_x_discrete(
+    labels = c(
+      "1" = "a11",
+      "2" = "a6",
+      "3" = "a14",
+      "4" = "a13",
+      "5" = "a9",
+      "6" = "a12",
+      "7" = "a5",
+      "8" = "a7",
+      "9" = "a16"
+    )
+  ) +
+    
+  theme_classic()+
+theme(legend.position = "none")
+
+
+gridExtra::grid.arrange(sens_plot,prec_plot,ncol=2)
+```
 
