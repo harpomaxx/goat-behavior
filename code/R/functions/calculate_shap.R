@@ -19,17 +19,8 @@ p_function_W <-
   function(object, newdata)
     caret::predict.train(object, newdata = newdata, type = "prob")[, "W"]
 
-#' Title
-#'
-#' @param dataset 
-#' @param model 
-#' @param nsim number of monte carlo simulation
-#'
-#' @return
-#' @export
-#'
-#' @examples
-calculate_shap <- function(dataset,model,nsim=10) {
+# DEPRECATED
+calculate_shap_deprecated <- function(dataset,model,nsim=10) {
 #  library(doParallel)
 #  registerDoParallel(8)
   
@@ -102,6 +93,132 @@ calculate_shap <- function(dataset,model,nsim=10) {
  shap_values
 }
 
+
+#' A new function for calcualting SHAP values
+#' the function returns a dataframe with SHAP values in the same
+#' order of the original dataset.
+#' 
+#' SHAP value dataframe also contains information about Animal and 
+#' the prediction of the model. Notice that SHAP are calculated considering
+#' the class (ground truth) and not the prediction. The prediction column is only
+#' used for filtering ana analysis. The function `calculate_shapp_class()` can be
+#' used for calculating SHAP values on prediction
+#' 
+#' @param dataset a dataset used for calcuating SHAP. The dataset is used for 
+#' permutation during SHAP calculation and also each class is filtered and SHAP 
+#' value for each class is calculated.
+#' @param model a model 
+#' @param nsim number of monte carlo simulation
+#'
+#' @return
+#' @export
+#'
+#' @examples
+calculate_shap <- function(dataset,model,nsim=10) {
+  trainset <- dataset %>%  na.omit() %>%
+    as.data.frame()
+  trainset_y <- dataset %>%
+    select(Activity) %>%
+    na.omit() %>%
+    unlist() %>%
+    unname()
+  ## Create an ID for maintaining the order
+  trainset <- cbind(id=seq(1:nrow(trainset)), trainset)
+  trainset <- trainset %>% select(-Activity)
+  
+  trainset_G <- trainset[which(trainset_y == "G"), ]
+  trainset_GM <- trainset[which(trainset_y == "GM"), ]
+  trainset_R <- trainset[which(trainset_y == "R"), ]
+  trainset_W <- trainset[which(trainset_y == "W"), ]
+  
+  id <- c(trainset_G$id, 
+          trainset_GM$id, 
+          trainset_R$id,
+          trainset_W$id)
+  trainset <- trainset %>% select(-id)
+  trainset_G <- trainset_G %>% select(-id)
+  trainset_GM <- trainset_GM %>% select(-id)
+  trainset_R <- trainset_R %>% select(-id)
+  trainset_W <- trainset_W %>% select(-id)
+  
+  Anim <- c(trainset_G$Anim, 
+            trainset_GM$Anim, 
+            trainset_R$Anim,
+            trainset_W$Anim)
+  trainset <- trainset %>% select(-Anim)
+  trainset_G <- trainset_G %>% select(-Anim)
+  trainset_GM <- trainset_GM %>% select(-Anim)
+  trainset_R <- trainset_R %>% select(-Anim)
+  trainset_W <- trainset_W %>% select(-Anim)
+  
+  predictions <- c(trainset_G$predictions, 
+                   trainset_GM$predictions, 
+                   trainset_R$predictions,
+                   trainset_W$predictions)
+  trainset <- trainset %>% select(-predictions)
+  trainset_G <- trainset_G %>% select(-predictions)
+  trainset_GM <- trainset_GM %>% select(-predictions)
+  trainset_R <- trainset_R %>% select(-predictions)
+  trainset_W <- trainset_W %>% select(-predictions)
+  
+  # Compute fast (approximate) Shapley values using 50 Monte Carlo repetitions
+  message(" - Calculating SHAP values for class G")
+  shap_values_G <-
+    fastshap::explain(
+      model,
+      X = trainset,
+      pred_wrapper = p_function_G,
+      nsim = nsim,
+      newdata = trainset_G,
+      .parallel = TRUE
+    )
+  message(" - Calculating SHAP values for class GM")
+  shap_values_GM <-
+    fastshap::explain(
+      model,
+      X = trainset,
+      pred_wrapper = p_function_GM,
+      nsim = nsim,
+      newdata = trainset_GM,
+      .parallel = TRUE
+    )
+  message(" - Calculating SHAP values for class R")
+  shap_values_R <-
+    fastshap::explain(
+      model,
+      X = trainset,
+      pred_wrapper = p_function_R,
+      nsim = nsim,
+      newdata = trainset_R,
+      .parallel = TRUE
+    )
+  message(" - Calculating SHAP values for class W")
+  shap_values_W <-
+    fastshap::explain(
+      model,
+      X = trainset,
+      pred_wrapper = p_function_W,
+      nsim = nsim,
+      newdata = trainset_W,
+      .parallel = TRUE
+      #  adjust = TRUE
+    )
+  
+  shap_values_G$class<-"G"
+  shap_values_GM$class<-"GM"
+  shap_values_R$class<-"R"
+  shap_values_W$class<-"W" 
+  
+  shap_values<-rbind(shap_values_G,
+                     shap_values_GM,
+                     shap_values_R,
+                     shap_values_W)
+  
+  shap_values <- shap_values %>% tibble::add_column(Anim)
+  shap_values <- shap_values %>% tibble::add_column(predictions)
+  #shap_values <-shap_values %>% tibble::add_column(id)
+  shap_values[order(id),] 
+}
 
 #' Calculate SHAP values for a given PREDICTED class
 #'
@@ -194,7 +311,8 @@ shap_beeswarm_plot<-function(shap_values,dataset){
     reshape2::melt() %>% group_by(variable) %>% 
     mutate(value_scale=range01(value))
   
-  beeswarm_plot<-cbind(shap_values, feature_value=dataset$value_scale) %>% # filter(class=="GM") %>%
+  beeswarm_plot<-cbind(shap_values, feature_value=dataset$value_scale) %>% 
+    # filter(class=="GM") %>%
     ggplot()+
     facet_wrap(~class)+
     #ggdark::dark_theme_bw()+
