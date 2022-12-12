@@ -26,7 +26,7 @@ select_features_boruta <- function(train_dataset_boruta,
   set.seed(19091974) 
   boruta_formula<-as.formula(paste0(category,"~."))
   var_importance_boruta_raw <-
-    Boruta(boruta_formula, data = train_dataset_boruta %>% na.omit(),num.threads=2)
+    Boruta(boruta_formula, data = train_dataset_boruta %>% na.omit(),num.threads=2, doTrace =2, ntree = 30 )
   var_importance_boruta <-
     attStats(var_importance_boruta_raw) %>%
     filter(decision == 'Confirmed') %>%
@@ -42,6 +42,10 @@ select_features_boruta <- function(train_dataset_boruta,
 #' Since for selecting a variable, it has to be present Boruta output,
 #' It could be possible to obtain a value less than `num_of_feat`
 #' 
+#' NOTICE that the algorithm depends on feature's order. If we use two 
+#' datasets with the same features but different order, the selected features
+#' could be different
+#' 
 #' @param dataset 
 #' @param num_of_feat the max number of features to be selected 
 #' @param num_of_samp the number of samples used by bootstrap
@@ -52,11 +56,11 @@ select_features_boruta <- function(train_dataset_boruta,
 select_maxn_features <- function(dataset,
                                  max_num_of_feat = 20,
                                  num_of_samp = 30){
-  set.seed(19091974) 
   suppressPackageStartupMessages(library(doMC))
   suppressPackageStartupMessages(library(rsample))
-  registerDoMC(cores = 5)
+  registerDoMC(cores = 4)
   message("[] Selecting best features.",appendLF = FALSE )
+  set.seed(19091974) 
   resamples <-
     rsample::bootstraps(dataset, strata = Activity, times = num_of_samp)
   var_importance <-

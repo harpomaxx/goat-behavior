@@ -6,8 +6,7 @@ source("code/R/functions/separate_dataset.R")
 suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(yaml))
-
+suppressWarnings(suppressPackageStartupMessages(library(yaml)))
 #### MAIN 
 
 option_list <- list(

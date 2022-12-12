@@ -1,12 +1,77 @@
 select_features_boruta:
-  maxnfeat: 40
-  numsamp: 30
-  
+  maxnfeat: 35
+  numsamp: 1
+
+train_model:
+  depth:
+  - 4
+  - 6
+  - 8
+  - 10
+  learning_rate:
+  - 0.05
+  - 0.1
+  - 0.025
+  - 0.0125
+  iterations: 1000
+  l2_leaf_reg:
+  - 3.0
+  - 1.0
+  rsm:
+  - 1
+  border_count:
+  - 64
+  - 32
+  - 16
+  vfrac: 0.1
+
+select_initial:
+  features:
+  - Anim
+  - Standing
+  - Active
+  - Lying
+  - '%HeadDown'
+  - DFL1
+  - DFL2
+  - DFL3
+  - DFA12
+  - DFA123
+  - DBL1
+  - DBL2
+  - DBL3
+  - DBA12
+  - DBA123
+  - X_Act
+  - Y_Act
+  - Steps
+  - distance(m)
+  - VarXY
+  - DiffXY
+  - MeanXY
+  - prev_Active1
+  - prev_Active2
+  - prev_Active3
+  - prev_Standing1
+  - prev_Standing2
+  - prev_Standing3
+  - prev_Lying1
+  - prev_Lying2
+  - prev_Lying3
+  - prev_steps1
+  - prev_steps2
+  - prev_steps3
+  - prev_headdown1
+  - prev_headdown2
+  - prev_headdown3
 separate_dataset:
-  excluded_anim: 
-    - 1553
-    - 1635
-    - 1779
-    - 505081
-    - 505075 
-    - 505080
+  excluded_anim:
+  - a1
+  - a15
+  - a3
+  - a8
+  - a10
+  - a4
+  - a2
+calculate_shap:
+  nsim: 10

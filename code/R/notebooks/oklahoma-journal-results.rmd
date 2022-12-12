@@ -16,13 +16,18 @@ library(rpart.plot)
 library(caret)
 library(catboost)
 library(lubridate)
+library(caret)
+library(doMC)
 ```
 # DATA PREPARATION
+```{r}
+set.seed(19091974) 
+```
 
 ## Loading ABDEL+MIMOSA Dataset
 
 ```{r}
-data_caprino_ok<-readr::read_delim("../../../data/seba-caprino-feature-enginering - Sebastian_Abdel_Final_Data_dist.tsv",col_types = cols(),delim='\t')
+data_caprino_ok<-readr::read_delim("../../../rawdata/seba-caprino-feature-engineering-seba-abdel.tsv",col_types = cols(),delim='\t')
 data_caprino_ok$Anim <- as.factor(data_caprino_ok$Anim)
 data_caprino_ok$collar <- as.factor(data_caprino_ok$collar)
 data_caprino_ok$Tag <- as.factor(data_caprino_ok$Tag)
@@ -83,7 +88,34 @@ data_caprino_ok<-act_timeseries %>% arrange(epoch) %>% group_by(Anim) %>%
       prev_steps1=lag(Steps, order_by=Anim,n=1, default=0),
       prev_steps2=lag(Steps, order_by=Anim,n = 2, default=0 ),
       prev_steps3=lag(Steps, order_by=Anim,n = 3, default=0 )
+      ) %>%
+    mutate(
+      prev_headdown1 = lag(
+        `%HeadDown`,
+        order_by = Anim,
+        n = 1,
+        default = 0
+      ),
+      prev_headdown2 = lag(
+        `%HeadDown`,
+        order_by = Anim,
+        n = 2,
+        default = 0
+      ),
+      prev_headdown3 = lag(
+        `%HeadDown`,
+        order_by = Anim,
+        n = 3,
+        default = 0
       )
+    )
+
+act_timeseries %>% filter(Anim=="1553") %>% mutate(prev_headdown1 = lag(
+        `%HeadDown`,
+       
+        n = 1,
+        default = 0
+      ))
 ```
 
 
@@ -176,9 +208,11 @@ data_caprino_ok_numeric <- data_caprino_ok_numeric %>% select(#-`distance(m)`,
                                                               -MeanXY,
                                                               #-tag_activity,
                                                             
-                                                              #-DOP
+                                                              -DOP,
+                                                              -DOPlog
                                                               )
 
+names(data_caprino_ok_numeric) %>% as.data.frame()
 ```
 ## BORUTA selecting Animals 
 
@@ -186,6 +220,7 @@ We use ~40% of the dataset for selecting features using BORUTA algorithm.
 Four animals were removed.
 
 ```{r}
+set.seed(19091974) 
 data_caprino_ok_numeric %>% group_by(Anim) %>% summarise(n=n())
 train_dataset_boruta<- data_caprino_ok_numeric  %>% 
   tibble::add_column(Activity=as.factor(data_caprino_ok$Activity))
@@ -198,43 +233,16 @@ data_caprino_ok_numeric_w_classes %>% group_by(Activity) %>% summarise(n=n())
 #data_caprino_ok_numeric$Anim %>% unique()
 ```
 
-## Bootstraping
-
-```{r}
-resamples<-rsample::bootstraps(train_dataset_boruta,strata = Activity,times = 30  )
-```
 
 
 ## Using BORUTA for Feature Selection
-
-
 ### Select TOP N features
 ```{r}
-source("../scripts/select_features_boruta.R")
-library(doMC)
-registerDoMC(cores = 4)
-library(rsample)
-var_importance <- foreach(i = 1:length(resamples$splits), .combine = rbind) %dopar% {
-  trainset<- rsample::analysis(resamples$splits[[i]])
-  partial<-select_features_boruta(trainset, "Activity",40)
-  partial<-cbind(partial,rsample=i)
-}  
-
-var_always_present<-var_importance %>% group_by(variable) %>% summarise(n=n()) %>% filter(n==30) %>% ungroup() %>% select(variable)
-v<-var_always_present %>% unlist() %>% unname()
-
-
-
-var_importance_boruta_final<- var_importance %>% filter(variable %in% v) %>% group_by(variable) %>% summarise(grandmeanImp=mean(meanImp)) %>% arrange(grandmeanImp %>% desc()) %>% ungroup() %>% select(variable)
-
-var_importance_boruta_final <-
-    apply(var_importance_boruta_final$variable %>% t() , 2,
-          function(x)
-            stringr::str_replace_all(x,
-                                     pattern = "`",
-                                     replacement = "")) %>% as.data.frame()
-names(var_importance_boruta_final) <- "variable"
-var_importance_boruta_final
+source("../functions/select_features_boruta.R")
+var_importance_boruta_final<-select_maxn_features(train_dataset_boruta,
+                                 max_num_of_feat = 20,
+                                 num_of_samp = 30)
+var_importance_boruta_final %>% arrange(variable)
 ```
 
 
@@ -255,24 +263,9 @@ metrics <- function(cm,preds,testset) {
   mm <- cbind(c(macro_metrics), c(micro_metrics))
   data.frame(macro = mm[, 1], micro = mm[, 2])
 }
-
 ```
 
-## Create LOOCV samples
-```{r}
 
-#data_caprino_ok_numeric <- data_caprino_ok_numeric %>%  filter( !(Anim %in% c(1553,1635,505081,505075) ))
-loocv_sample_train <- vector(mode = "list", length = length( data_caprino_ok_numeric_w_classes$Anim %>% unique()))
-loocv_sample_test <- vector(mode = "list", length = length( data_caprino_ok_numeric_w_classes$Anim %>% unique()))
-
-n_anim<-data_caprino_ok_numeric_w_classes$Anim %>% unique()
-
-for(i in seq_along(n_anim) ) {
-  print(i)
-  loocv_sample_train[[i]] <- which(data_caprino_ok_numeric_w_classes$Anim != n_anim[i])
-  loocv_sample_test[[i]] <- which(data_caprino_ok_numeric_w_classes$Anim == n_anim[i])
-}
-```
 
 ## Control and Resampling setup
 ```{r}
@@ -306,8 +299,9 @@ ctrl_fast <- trainControl(
 
 ## Boost Boruta Dataset
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 
+set.seed(19091974)
   boost_val_dataset_feature_selection <- train_dataset_boruta %>% sample_frac(.2)
   trainset_dataset_feature_selection <- setdiff(train_dataset_boruta, boost_val_dataset_feature_selection)
   
@@ -336,29 +330,35 @@ boostFit_boruta
 
 
 ## Boost LOOCV
+```{r}
+setwd("/home/harpo/Dropbox/ongoing-work/git-repos/goat-behavior/")
+source("code/R/functions/train_model_loocv.R")
+```
 
 ```{r message=FALSE}
-library(caret)
 library(doMC)
-registerDoMC(cores = 8)
+set.seed(19091974)
+registerDoMC(cores = 4)
 #caret_dataset <-  cbind(data_caprino_ok_numeric,Activity=data_caprino_ok$Activity)
-caret_dataset <-  data_caprino_ok_numeric_w_classes
+#caret_dataset <-  data_caprino_ok_numeric_w_classes
+caret_dataset <- readr::read_delim("../../../data/split/seba-caprino_loocv.tsv",delim='\t')
+samples<-create_loocv_samples(caret_dataset)
 
 loocv_results<- vector(mode = "list", length = length( n_anim))
 
-for (i in seq(1, length(n_anim))) {
-  train_dataset_loocv <- caret_dataset[loocv_sample_train[[i]], ]
+for (i in seq(1, length(samples$n_anim))) {
+  train_dataset_loocv <- caret_dataset[samples$loocv_train[[i]], ]
   train_dataset_loocv$Activity <-
     as.factor(train_dataset_loocv$Activity)
-  test_dataset_loocv <- caret_dataset[-loocv_sample_train[[i]], ]
+  test_dataset_loocv <- caret_dataset[-samples$loocv_train[[i]], ]
   test_dataset_loocv$Activity <-
     factor(test_dataset_loocv$Activity,
            levels = levels(train_dataset_loocv$Activity))
   #print(train_dataset[-loocv_sample[[i]],] %>% group_by(Activity) %>% summarise(n=n()))
   
   
-  boost_val_dataset <- train_dataset_loocv %>% sample_frac(.1)
-  trainset_dataset <- setdiff(train_dataset_loocv, boost_val_dataset)
+  val_dataset <- train_dataset_loocv %>% sample_frac(.1)
+  train_dataset <- setdiff(train_dataset_loocv, val_dataset)
   
   selected_variables <- var_importance_boruta_final #%>% filter(variable!="MeanXYlog") %>% 
   #filter(variable!="DFA123") %>%
@@ -370,9 +370,9 @@ for (i in seq(1, length(n_anim))) {
  
   
   boostFit <- caret::train(
-    x = train_dataset_loocv %>%
+    x = train_dataset %>%
       select(selected_variables$variable) %>%  na.omit() %>% as.data.frame(),
-    y = train_dataset_loocv %>%  select(Activity) %>% unlist() %>% unname()  %>% as.factor(),
+    y = train_dataset %>%  select(Activity) %>% unlist() %>% unname()  %>% as.factor(),
     method = catboost::catboost.caret,
     #tuneLength=5,
     tuneGrid = grid,
@@ -385,9 +385,9 @@ for (i in seq(1, length(n_anim))) {
     use_best_model = TRUE,
     od_type = 'Iter',
     test_pool = catboost.load_pool(
-      boost_val_dataset %>%
+      val_dataset %>%
         select(selected_variables$variable) %>%  na.omit() %>% as.data.frame(),
-      label = as.numeric(as.factor(boost_val_dataset$Activity)) -
+      label = as.numeric(as.factor(val_dataset$Activity)) -
         1
     )
   )
@@ -400,16 +400,18 @@ for (i in seq(1, length(n_anim))) {
                              select(selected_variables$variable))
   cm <-
     confusionMatrix(reference = as.factor(test_dataset_loocv$Activity), boostFit_eval)
-  metrics(cm, boostFit_eval, test_dataset_loocv)
+  #metrics(cm, boostFit_eval, test_dataset_loocv)
   
   loocv_results[[i]] <- list(
         overall = cm$overall,
         byclass = cm$byClass,
         tab = cm$table,
         predictions = boostFit_eval,
+        observations = as.factor(test_dataset_loocv$Activity),
         model = boostFit
       )
 }
+#loocv_results
 ```
 
 
@@ -431,5 +433,4 @@ do.call(rbind, byclass) %>% as.data.frame() %>%
   group_by(class) %>% 
   summarise(mean = mean(Recall, na.rm =TRUE), sd=sd(Recall, na.rm=TRUE)
             )
-
 ```
