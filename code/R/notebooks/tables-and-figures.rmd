@@ -9,6 +9,161 @@ library(yaml)
 library(dplyr)
 library(ggplot2)
 ```
+
+# Functions
+## Function for resample table
+```{r}
+
+create_resampling_restable <- function (experiment_id, experiments_data){
+library(ztable)
+library(tibble)
+activity_metrics <-
+  experiments_data %>% filter(Experiment == experiment_id) %>% select(
+    Experiment,
+    reSens_R_Mean,
+    reSens_GM_Mean,
+    reSens_W_Mean,
+    reSens_G_Mean,
+    rePrec_R_Mean,
+    rePrec_GM_Mean,
+    rePrec_W_Mean,
+    rePrec_G_Mean,
+    reSpec_R_Mean,
+    reSpec_GM_Mean,
+    reSpec_W_Mean,
+    reSpec_G_Mean
+  ) %>%
+  tidyr::pivot_longer(
+    !Experiment,
+    names_to = c("Activity", "Metric"),
+    names_pattern = "re(.*)_(.*)_Mean",
+    values_to = "count"
+  ) %>%
+  tidyr::pivot_wider(names_from = Metric, values_from = c(count)) %>% as.data.frame() %>% select(!Experiment)
+
+all_metrics <-
+  experiments_data %>% filter(.data$Experiment == experiment_id) %>% select(
+    Experiment,
+    reAcc_Mean,
+    reKappa_Mean,
+    reSens_Mean,
+    reSpec_Mean,
+    rePrec_Mean
+  ) %>% t() %>% as.data.frame()
+
+all_metrics <- all_metrics %>% slice(2:6)
+all_metrics$V1 <- as.double(all_metrics$V1)
+all_metrics <- all_metrics %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>% rownames_to_column("Metrics")
+
+all_metrics$Metrics <- c("Accuracy",
+                         "Kappa",
+                         "Sensitivity",
+                         "Specificity",
+                         "Precision")
+
+activity_metrics <- activity_metrics %>% rename(Metrics = "Activity")
+activity_metrics$Metrics <- c("Sensitivity", "Precision", "Specificity")
+
+names(all_metrics) <- names(activity_metrics)
+rgroup = c("Overall", "Per Activity")
+n.rgroup = c(5, 3)
+
+table_results <- 
+rbind(all_metrics, activity_metrics) %>%
+  ztable(align = "llllll") %>% spanCol(row = 2, from = 3, to =
+                                                         6) %>%
+  spanCol(row = 3, from = 3, to = 6) %>%
+  spanCol(row = 4, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 6, from = 3, to = 6) %>%
+  addrgroup(rgroup = rgroup,
+            n.rgroup = n.rgroup,
+            cspan.rgroup = 1) %>% hlines(add = c(5))
+
+table_results
+}
+```
+## Function for loocv table
+```{r}
+create_loocv_restable <- function (experiment_id, experiments_data){
+library(ztable)
+library(tibble)
+activity_metrics <-
+  experiments_data %>% filter(Experiment == experiment_id) %>% select(
+    Experiment,
+    R_Sens,
+    GM_Sens,
+    W_Sens,
+    G_Sens,
+    R_Prec,
+    GM_Prec,
+    W_Prec,
+    G_Prec,
+    R_Spec,
+    GM_Spec,
+    W_Spec,
+    G_Spec
+  ) %>%
+  tidyr::pivot_longer(
+    !Experiment,
+    names_to = c("Activity", "Metrics"),
+    names_pattern = "^(.*)_(.*)$",
+    values_to = "count"
+  ) %>%
+  tidyr::pivot_wider(names_from = Activity, values_from = c(count)) %>% as.data.frame() %>% select(!Experiment)
+
+all_metrics <-
+  experiments_data %>% filter(.data$Experiment == experiment_id) %>% select(
+    Experiment,
+    looAcc_mean_macro,
+    looKappa_mean_macro,
+    looSens_mean_macro,
+    looPrec_mean_macro,
+    looSpec_mean_macro,
+  ) %>% t() %>% as.data.frame()
+
+all_metrics <- all_metrics %>% slice(2:6)
+all_metrics$V1 <- as.double(all_metrics$V1)
+all_metrics <- all_metrics %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>%
+  add_column(all_metrics) %>% rownames_to_column("Metrics")
+
+all_metrics$Metrics <- c("Accuracy",
+                         "Kappa",
+                         "Sensitivity",
+                         "Precision",
+                         "Specificity")
+
+#activity_metrics <- activity_metrics %>% rename(Metrics = "Activity")
+activity_metrics$Metrics <- c("Sensitivity", "Precision", "Specificity")
+
+names(all_metrics) <- names(activity_metrics)
+rgroup = c("Overall", "Per Activity")
+n.rgroup = c(5, 3)
+
+table_results <- 
+rbind(all_metrics, activity_metrics) %>%
+  ztable(align = "llllll") %>% spanCol(row = 2, from = 3, to =
+                                                         6) %>%
+  spanCol(row = 3, from = 3, to = 6) %>%
+  spanCol(row = 4, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 5, from = 3, to = 6) %>%
+  spanCol(row = 6, from = 3, to = 6) %>%
+  addrgroup(rgroup = rgroup,
+            n.rgroup = n.rgroup,
+            cspan.rgroup = 1) %>% hlines(add = c(5))
+
+table_results
+}
+```
+
+
 ```{r}
 dataset %>% group_by(Anim) %>% count() %>% select(Anim)
 dataset$Anim <- as.character(dataset$Anim)
@@ -47,7 +202,7 @@ separate_anim <- c(
 dataset %>% filter(Anim %in% separate_anim) %>% nrow()
 ```
 
-## Generate dataset table
+# Generate dataset table
 ```{r}
 library(kableExtra)
 library(ztable)
@@ -89,7 +244,7 @@ ztbl<-ztable(dataset_wide)#
 ztbl %>% makeHeatmap(cols = 18) %>% print(caption="Table 1: Number of observations per animal discriminated by activity.")
 ```
 
-## Generate DATASET A table
+# Generate DATASET A table
 ```{r results='asis'}
 
 library(kableExtra)
@@ -122,7 +277,7 @@ ztable(dataset_wide) %>% makeHeatmap(cols = 9) %>%  print(caption="Table 2: Numb
 
 ```
 
-## Generate DATASET B table
+# Generate DATASET B table
 ```{r}
 
 library(kableExtra)
@@ -160,7 +315,7 @@ dataset %>% group_by(Anim) %>% count()
 ```
 
 
-## Features
+# Features
 ```{r}
 library(dplyr)
 library(ztable)
@@ -175,138 +330,68 @@ z<-features_set %>% select(-Type) %>% ztable(booktabs = T) %>%
 print(z)
 ```
 
-## Resampling results per experiment 
+# Calculate Resampling results per experiment 
+use `dvc exp show --drop ".*" --keep "re.*|Experiment" --csv >resample_results.csv`
 ```{r}
 
-create_resampling_restable <- function (experiment_id, experiments_data){
-library(ztable)
-library(tibble)
-activity_metrics <-
-  experiments_data %>% filter(Experiment == experiment_id) %>% select(
-    Experiment,
-    reSens_R_Mean,
-    reSens_GM_Mean,
-    reSens_W_Mean,
-    reSens_G_Mean,
-    rePrec_R_Mean,
-    rePrec_GM_Mean,
-    rePrec_W_Mean,
-    rePrec_G_Mean,
-    reSpec_R_Mean,
-    reSpec_GM_Mean,
-    reSpec_W_Mean,
-    reSpec_G_Mean
-  ) %>%
-  tidyr::pivot_longer(
-    !Experiment,
-    names_to = c("Activity", "Metric"),
-    names_pattern = "re(.*)_(.*)_Mean",
-    values_to = "count"
-  ) %>%
-  tidyr::pivot_wider(names_from = Metric, values_from = c(count)) %>% as.data.frame() %>% select(!Experiment)
-
-all_metrics <-
-  experiments_data %>% filter(.data$Experiment == experiment_id) %>% select(
-    Experiment,
-    reAcc_Mean,
-    reKappa_Mean,
-    reSens_Mean,
-    reSens_Mean,
-    rePrec_Mean,
-    reSpec_Mean
-  ) %>% t() %>% as.data.frame()
-
-all_metrics <- all_metrics %>% slice(2:6)
-all_metrics$V1 <- as.double(all_metrics$V1)
-all_metrics <- all_metrics %>%
-  add_column(all_metrics) %>%
-  add_column(all_metrics) %>%
-  add_column(all_metrics) %>% rownames_to_column("Metrics")
-
-all_metrics$Metrics <- c("Accuracy",
-                         "Kappa",
-                         "Sensitivity",
-                         "Specificity",
-                         "Precision")
-
-activity_metrics <- activity_metrics %>% rename(Metrics = "Activity")
-activity_metrics$Metrics <- c("Sensitivity", "Precision", "Specificity")
-
-names(all_metrics) <- names(activity_metrics)
-rgroup = c("Overall", "Per Activity")
-n.rgroup = c(5, 3)
-
-table_results <- 
-rbind(all_metrics, activity_metrics) %>%
-  ztable(align = "llllll") %>% spanCol(row = 2, from = 3, to =
-                                                         6) %>%
-  spanCol(row = 3, from = 3, to = 6) %>%
-  spanCol(row = 4, from = 3, to = 6) %>%
-  spanCol(row = 5, from = 3, to = 6) %>%
-  spanCol(row = 5, from = 3, to = 6) %>%
-  spanCol(row = 6, from = 3, to = 6) %>%
-  addrgroup(rgroup = rgroup,
-            n.rgroup = n.rgroup,
-            cspan.rgroup = 1) %>% hlines(add = c(5))
-
-table_results
-}
-```
-### Tables
-```{r}
 options(ztable.type = 'viewer')
 experiments <- c("5f-1s", "10f-1s", "15f-1s", "20f-1s", "25f-1s")
 experiments_no_log <-
-  c("5f-1s-no-log-1d",
-    "10f-1s-no-log-1d",
-    "15f-1s-no-log-1d",
-    "20f-1s-no-log-1d",
-    "25f-1s-no-log-1d",
-    "30f-1s-no-log-1d",
-    "35f-1s-no-log-1d"
+  c("5f-1s-no-log-1d-loocvtune",
+    "10f-1s-no-log-1d-loocvtune",
+    "15f-1s-no-log-1d-loocvtune",
+    "20f-1s-no-log-1d-loocvtune",
+    "25f-1s-no-log-1d-loocvtune",
+    "30f-1s-no-log-1d-loocvtune",
+    "35f-1s-no-log-1d-loocvtune"
     )
 experiments <- c(experiments_no_log)
-r2 <- readr::read_csv("../../../resample.csv")
+r2 <- readr::read_csv("../../../resample_results.csv")
 r2 <- r2 %>% filter(Experiment %in% experiments)
 
-#options(ztable.type = 'latex')
+options(ztable.type = 'latex')
 options(ztable.zebra=NULL)
-create_resampling_restable("5f-1s-no-log-1d",r2)  
-create_resampling_restable("10f-1s-no-log-1d",r2)
-create_resampling_restable("15f-1s-no-log-1d",r2)
-create_resampling_restable("20f-1s-no-log-1d",r2)
-create_resampling_restable("25f-1s-no-log-1d",r2)
-create_resampling_restable("30f-1s-no-log-1d",r2)
-create_resampling_restable("35f-1s-no-log-1d",r2)
+create_resampling_restable("5f-1s-no-log-1d-loocvtune",r2)  
+create_resampling_restable("10f-1s-no-log-1d-loocvtune",r2)
+create_resampling_restable("15f-1s-no-log-1d-loocvtune",r2)
+create_resampling_restable("20f-1s-no-log-1d-loocvtune",r2)
+create_resampling_restable("25f-1s-no-log-1d-loocvtune",r2)
+create_resampling_restable("30f-1s-no-log-1d-loocvtune",r2)
+create_resampling_restable("35f-1s-no-log-1d-loocvtune",r2)
+
+r2 %>% select(contains("R_Mean"))
+```
+```{r}
+create_resampling_restable("new-metrics-implementation",r2)  
 ```
 
-### Plots
+## Plots
 ```{r fig.height=5, fig.width=10}
 
 experiments_no_log <-
-  c("5f-1s-no-log-1d",
-    "10f-1s-no-log-1d",
-    "15f-1s-no-log-1d",
-    "20f-1s-no-log-1d",
-    "25f-1s-no-log-1d",
-    "30f-1s-no-log-1d",
-    "35f-1s-no-log-1d"
+  c("5f-1s-no-log-1d-loocvtune",
+    "10f-1s-no-log-1d-loocvtune",
+    "15f-1s-no-log-1d-loocvtune",
+    "20f-1s-no-log-1d-loocvtune",
+    "25f-1s-no-log-1d-loocvtune",
+    "30f-1s-no-log-1d-loocvtune",
+    "35f-1s-no-log-1d-loocvtune"
     )
 experiments <- c(experiments_no_log)
-r2 <- readr::read_csv("../../../resample.csv")
+r2 <- readr::read_csv("../../../resample_results.csv")
 r2 <- r2 |> filter(Experiment %in% experiments)
 r2$id<-c(35,30,25,20,15,10,5) 
 r2 <- r2 %>% arrange(id)
 r2
 ```
 
-```{r}
+```{r fig.height=6, fig.width=8}
 sens<- r2 |> ggplot(aes(x=id))+
   ylab("Sensitivity")+
   xlab("Feature number")+
     ylim(c(0.5,1))+
   geom_point(aes(y=reSens_Mean))+
-  geom_point(aes(x=25,y=max(reSens_Mean)),size=3,color='red')+
+  geom_point(aes(x=15,y=max(reSens_Mean)),size=3,color='red')+
   geom_line(aes(y=reSens_Mean))+
   geom_ribbon(aes(ymax=reSens_Mean+reSens_sd, ymin=reSens_Mean-reSens_sd),alpha=0.1,fill="orange")+
   geom_line(aes(y=reSens_Mean+reSens_sd),color='orange')+
@@ -320,7 +405,7 @@ bacc<- r2 |> ggplot(aes(x=id))+
   xlab("Feature number")+
   ylim(c(0.5,1))+
   geom_point(aes(y=reAcc_Mean))+
-  geom_point(aes(x=25,y=max(reAcc_Mean)),size=3,color='red')+
+  geom_point(aes(x=15,y=max(reAcc_Mean)),size=3,color='red')+
   geom_line(aes(y=reAcc_Mean))+
   geom_ribbon(aes(ymax=reAcc_Mean+reAcc_sd, ymin=reAcc_Mean-reAcc_sd),alpha=0.1,fill="orange")+
   geom_line(aes(y=reAcc_Mean+reAcc_sd),color='orange')+
@@ -334,7 +419,7 @@ spec<- r2 |> ggplot(aes(x=id))+
   xlab("Feature number")+
   ylim(c(0.5,1))+
   geom_point(aes(y=reSpec_Mean))+
-  geom_point(aes(x=25,y=max(reSpec_Mean)),size=3,color='red')+
+  geom_point(aes(x=15,y=max(reSpec_Mean)),size=3,color='red')+
   geom_line(aes(y=reSpec_Mean))+
   geom_ribbon(aes(ymax=reSpec_Mean+reSpec_sd, ymin=reSpec_Mean-reSpec_sd),alpha=0.1,fill="orange")+
   geom_line(aes(y=reSpec_Mean+reSpec_sd),color='orange')+
@@ -348,7 +433,7 @@ prec <- r2 |> ggplot(aes(x=id))+
   xlab("Feature number")+
   ylim(c(0.5,1))+
   geom_point(aes(y=rePrec_Mean))+
-  geom_point(aes(x=25,y=max(rePrec_Mean)),size=3,color='red')+
+  geom_point(aes(x=15,y=max(rePrec_Mean)),size=3,color='red')+
   geom_line(aes(y=rePrec_Mean))+
   geom_ribbon(aes(ymax=rePrec_Mean+rePrec_sd, ymin=rePrec_Mean-rePrec_sd),alpha=0.1,fill="orange")+
   geom_line(aes(y=rePrec_Mean+rePrec_sd),color='orange')+
@@ -371,6 +456,7 @@ experiments_no_log <-
     "25f-1s-no-log",
     "5f-1s-no-log-1d-loocvtune")
 experiments <- c(experiments_no_log)
+
 options(ztable.type = 'viewer')
 r2 <- readr::read_csv("../../../resample.csv")
 r2 <- r2 %>% filter(Experiment %in% experiments)
@@ -447,116 +533,185 @@ table_15f_1s_no_log
 ```
 
 
-# LOOCV results experiments (per animal)
-```{r}
-create_loocv_restable <- function (experiment_id, experiments_data){
-library(ztable)
-library(tibble)
-activity_metrics <-
-  experiments_data %>% filter(Experiment == experiment_id) %>% select(
-    Experiment,
-    R_Sens,
-    GM_Sens,
-    W_Sens,
-    G_Sens,
-    R_Prec,
-    GM_Prec,
-    W_Prec,
-    G_Prec,
-    R_Spec,
-    GM_Spec,
-    W_Spec,
-    G_Spec
-  ) %>%
-  tidyr::pivot_longer(
-    !Experiment,
-    names_to = c("Activity", "Metrics"),
-    names_pattern = "^(.*)_(.*)$",
-    values_to = "count"
-  ) %>%
-  tidyr::pivot_wider(names_from = Activity, values_from = c(count)) %>% as.data.frame() %>% select(!Experiment)
 
-all_metrics <-
-  experiments_data %>% filter(.data$Experiment == experiment_id) %>% select(
-    Experiment,
-    overall_Acc,
-    overall_Kappa,
-    micro_Sens_micro,
-    micro_Prec_micro,
-    micro_Spec_micro,
-  ) %>% t() %>% as.data.frame()
+# Calculate LOOCV results
 
-all_metrics <- all_metrics %>% slice(2:6)
-all_metrics$V1 <- as.double(all_metrics$V1)
-all_metrics <- all_metrics %>%
-  add_column(all_metrics) %>%
-  add_column(all_metrics) %>%
-  add_column(all_metrics) %>% rownames_to_column("Metrics")
-
-all_metrics$Metrics <- c("Accuracy",
-                         "Kappa",
-                         "Sensitivity",
-                         "Specificity",
-                         "Precision")
-
-#activity_metrics <- activity_metrics %>% rename(Metrics = "Activity")
-activity_metrics$Metrics <- c("Sensitivity", "Precision", "Specificity")
-
-names(all_metrics) <- names(activity_metrics)
-rgroup = c("Overall", "Per Activity")
-n.rgroup = c(5, 3)
-
-table_results <- 
-rbind(all_metrics, activity_metrics) %>%
-  ztable(align = "llllll") %>% spanCol(row = 2, from = 3, to =
-                                                         6) %>%
-  spanCol(row = 3, from = 3, to = 6) %>%
-  spanCol(row = 4, from = 3, to = 6) %>%
-  spanCol(row = 5, from = 3, to = 6) %>%
-  spanCol(row = 5, from = 3, to = 6) %>%
-  spanCol(row = 6, from = 3, to = 6) %>%
-  addrgroup(rgroup = rgroup,
-            n.rgroup = n.rgroup,
-            cspan.rgroup = 1) %>% hlines(add = c(5))
-
-table_results
-}
-```
-
+use `dvc exp show --drop ".*" --keep "loo.*mean_*|Experiment" --csv >loocv_results.csv`
 ```{r}
 library(ztable)
 options(ztable.type='viewer')
+
+experiments_no_log <-
+  c("5f-1s-no-log-1d-loocvtune",
+    "10f-1s-no-log-1d-loocvtune",
+    "15f-1s-no-log-1d-loocvtune",
+    "20f-1s-no-log-1d-loocvtune",
+    "25f-1s-no-log-1d-loocvtune",
+    "30f-1s-no-log-1d-loocvtune",
+    "35f-1s-no-log-1d-loocvtune"
+    )
+experiments <- c(experiments_no_log)
 r<-readr::read_csv("../../../loocv_results.csv")
 r <- r %>% filter(Experiment %in% experiments)
-names(r)<-names(r) %>% gsub(pattern = "metrics/train_model_loocv_metrics_(.*).yaml:(.*)_mean", replacement = "\\1_\\2", x = names(r))
-names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
-
-#r<- r %>% filter(!is.na(exp))
-#ztable(r %>% as.data.frame() %>% select(c(1,2,3,4,5,8,9,10,11))) %>% makeHeatmap() 
-
+names(r)<-names(r)  %>% gsub(pattern = "loo(.*)_(.*)_mean", replacement = "\\2_\\1", x = names(r))
 
 #options(ztable.type = 'latex')
 options(ztable.zebra=NULL)
 create_loocv_restable("5f-1s-no-log-1d-loocvtune",r)  
 ```
 
-# Test results experiments (per animal)
+# Calculate Test results experiments (per animal)
+
+use `dvc exp show  --drop ".*" --keep "Testloo.*mean_*|Experiment" --csv >Testloo_results.csv`
+
+```{r}
+library(ztable)
+options(ztable.type='viewer')
+r<-readr::read_csv("../../../Testloo_results.csv")
+names(r)<-names(r)  %>% gsub(pattern = "Testloo(.*)_(.*)_mean", replacement = "\\2_\\1", x = names(r))
+names(r)<-names(r)  %>% gsub(pattern = "Test(.*)", replacement = "\\1", x = names(r))
+
+names(r)
+options(ztable.zebra=NULL)
+options(ztable.type = 'viewer')
+create_loocv_restable("5f-1s-no-log-1d-loocvtune",r)  
+```
+
+
+# Calculate test results experiments (considering the complete testdataset as a whole)
+
+use `dvc exp show  --drop ".*" --keep "test.*|Experiment" --csv >test_results.csv`
 ```{r}
 library(ztable)
 options(ztable.type='viewer')
 r<-readr::read_csv("../../../test_results.csv")
+names(r)<-names(r)  %>% gsub(pattern = "test(.*)_(.*)", replacement = "\\2_\\1", x = names(r))
+names(r)<-names(r)  %>% gsub(pattern = "test(.*)", replacement = "\\1", x = names(r))
 
-names(r)<-names(r) %>% gsub(pattern = "metrics/test_model_loocv_metrics_(.*).yaml:(.*)_mean", replacement = "\\1_\\2", x = names(r))
-names(r)<-names(r)  %>% gsub(pattern = "loo", replacement = "", x = names(r))
-
-#r<- r %>% filter(!is.na(exp))
-#ztable(r %>% as.data.frame() %>% select(c(1,2,3,4,5,8,9,10,11))) %>% makeHeatmap() 
-
-r %>% filter(grepl(pattern = ".*-no-log.*",Experiment))
+names(r)<-names(r)  %>% gsub(pattern = "macro_(.*)", replacement = "loo\\1_mean_macro", x = names(r))
+names(r)
+# looSens_mean_macro
 options(ztable.zebra=NULL)
-create_loocv_restable("25f-1s-no-log-1d",r)  
+options(ztable.type = 'latex')
+create_loocv_restable("15f-1s-no-log-1d-loocvtune",r)  
 ```
+```{r}
+dataset <- readr::read_delim("data/split/seba-caprino_loocv.tsv",delim='\t')
+goat_model <- readRDS("models/boost/seba-caprino_model.rds")
+
+predictions<-predict(goat_model,dataset)
+cm<-caret::confusionMatrix(reference=as.factor(dataset$Activity),predictions)
+p_act_res<-cm$byClass %>% as.data.frame() %>% select(Sensitivity,Precision,Specificity) %>% t() %>% as.data.frame() 
+names(p_act_res) <- gsub(pattern = "Class: (.*)", replacement = "\\1", x = names(p_act_res))
+p_act_res %>% mutate_all(.funs=funs(round(.,2))) %>%  select(R,GM,W,G)
+```
+
+
+# Plot per animal
+
+```{r fig.height=2, fig.width=6}
+library(ggrepel)
+results <-
+  readRDS("../../../models/test_loocv/seba-caprino_model_test_loocv_results.rds")
+results[[9]]$byclass
+byclass <- lapply(results, function(x)
+  x$byclass)
+byclass
+rownames <- do.call(rbind, byclass)   %>% rownames()
+
+byclass <- do.call(rbind, byclass) %>% as.data.frame()
+byclass <- byclass %>% select(Sensitivity, Specificity, Precision)
+plot_data <-
+  byclass %>% tibble::rownames_to_column(var = "Activity") %>%
+  mutate(Activity = gsub(
+    x = Activity,
+    pattern = "Class..",
+    replacement = ""
+  )) %>%
+  mutate(Activity = gsub(Activity, pattern = '[.0-9]*', replacement = ''))
+
+plot_data$id <- rep(seq(1, 9), each = 4)
+sens_plot <- plot_data %>% ggplot() +
+  geom_point(aes(
+    y = Sensitivity,
+    x = as.factor(id),
+    color = Activity,
+    group = Activity
+  ),size=3) +
+  geom_path(aes(
+    y = Sensitivity,
+    x = as.factor(id),
+    color = Activity,
+    group = Activity
+  )) +
+  geom_hline(aes(yintercept = 0.75),linetype=2,color='gray')+
+ 
+  xlab("Anim") +
+  scale_x_discrete(
+    labels = c(
+      "1" = "a11",
+      "2" = "a6",
+      "3" = "a14",
+      "4" = "a13",
+      "5" = "a9",
+      "6" = "a12",
+      "7" = "a5",
+      "8" = "a7",
+      "9" = "a16"
+    )
+  ) +
+  theme_classic()+
+  theme(legend.position =  c("0.4",0.3))+
+    theme(
+        #axis.text.x=element_blank(), #remove x axis labels
+        #axis.ticks.x=element_blank(), #remove x axis ticks
+    
+        legend.direction = "horizontal",
+         legend.title=element_text(size=9),
+           legend.text=element_text(size=9))
+  #theme(legend.position = c("0.2",0.1),
+  #      legend.direction = "horizontal",
+  #      legend.key.size = unit(0.05, 'cm'))
+sens_plot
 
 ```
 
+
+```{r fig.height=3, fig.width=9}
+#"a11" "a6"  "a14" "a13" "a9"  "a12" "a5"  "a7"  "a16"
+prec_plot <- plot_data %>% ggplot() +
+  geom_point(aes(
+    y = Precision,
+    x = as.factor(id),
+    color = Activity,
+    group = Activity
+  ),size=3) +
+  geom_path(aes(
+    y = Precision,
+    x = as.factor(id),
+    color = Activity,
+    group = Activity
+  )) +
+   geom_hline(aes(yintercept = 0.75),linetype=2,color='gray')+
+  xlab("Anim") +
+  scale_x_discrete(
+    labels = c(
+      "1" = "a11",
+      "2" = "a6",
+      "3" = "a14",
+      "4" = "a13",
+      "5" = "a9",
+      "6" = "a12",
+      "7" = "a5",
+      "8" = "a7",
+      "9" = "a16"
+    )
+  ) +
+    
+  theme_classic()+
+theme(legend.position = "none")
+
+
+gridExtra::grid.arrange(sens_plot,prec_plot,ncol=2)
+```
 

@@ -1,0 +1,13 @@
+looAcc_mean_macro: 0.704357
+looAcc_sd_macro: 0.2163209
+looKappa_mean_macro: 0.4698729
+looKappa_sd_macro: 0.2388617
+looBAcc_mean_macro: .nan
+looBAcc_sd_macro: .na.real
+looSpec_mean_macro: 0.8884948
+looSpec_sd_macro: 0.0569681
+looSens_mean_macro: 0.6639352
+looSens_sd_macro: 0.150652
+looPrec_mean_macro: 0.594451
+looPrec_sd_macro: 0.1861553
+

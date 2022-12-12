@@ -36,6 +36,17 @@ create_loocv_samples <- function(dataset) {
                       loocv_test=loocv_sample_test)
 }
 
+#' a function for training a model using a LOOCV approach per animal
+#'
+#' @param dataset 
+#' @param selected_variables 
+#' @param gridsearch 
+#' @param vfrac 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 train_model_loocv <- function(dataset, selected_variables, gridsearch=NULL,vfrac=0.1) {
   suppressPackageStartupMessages(library(doMC))
   registerDoMC(cores = 8)
@@ -95,6 +106,16 @@ train_model_loocv <- function(dataset, selected_variables, gridsearch=NULL,vfrac
   loocv_results
 }
 
+#'  Test  a given model but considering metrics per animal 
+#'
+#' @param dataset 
+#' @param selected_variables 
+#' @param model 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 test_model_loocv <- function(dataset, selected_variables, model) {
   suppressPackageStartupMessages(library(doMC))
   registerDoMC(cores = 8)
@@ -131,7 +152,11 @@ test_model_loocv <- function(dataset, selected_variables, model) {
 
 
 
-#' Title
+#' Calculate different performance metrics. 
+#' 
+#' We use information provide by the `confusionMatrix()` function from `caret` 
+#' and the package `yardstick`. Check the notebook `analize-results,rmd` for 
+#' more info about the differences between macro and micro average
 #'
 #' @param loocv_results 
 #'
@@ -149,11 +174,12 @@ loocv_peformance_metrics<-function(loocv_results){
                     as.data.frame() %>% 
                     select(Kappa)) %>% unlist() %>% t() 
   
+  # Macro metrics per animal and activity
   byclass <- lapply(loocv_results, function(x)
     x$byclass)
   
   rownames <- do.call(rbind, byclass)   %>% rownames()
-  
+  # calculate metrics per animal and class
   byclass<-do.call(rbind, byclass) %>% as.data.frame() %>% 
     tibble::add_column(class =rownames) %>% 
     group_by(class) %>% 
@@ -167,7 +193,9 @@ loocv_peformance_metrics<-function(loocv_results){
               looPrec_sd =sd(`Precision`, na.rm=TRUE),
     )
   
-  micro_metrics <-  cbind(
+  # Macro metrics per animal. Accuracy and kappa are used from `caret`
+  # see notebook `analize-resuls.rmd` for details
+  macro_metrics <-  cbind(
     purrr::map(
       loocv_results,
       .f = function(x)
@@ -175,13 +203,15 @@ loocv_peformance_metrics<-function(loocv_results){
     ) %>%
       purrr::map_df(
         .f = function(x)
-          bal_accuracy(
+          yardstick::bal_accuracy(
             x,
             estimate = preds,
             truth = obs,
-            estimator = "micro"
+            estimator = "macro"
           )
-      ) %>% summarise(looBAcc_mean_micro = mean(.estimate, na.rm = TRUE)),
+      ) %>% summarise(looBAcc_mean_macro = mean(.estimate, na.rm = TRUE),
+                      looBAcc_sd_macro = sd(.estimate, na.rm = TRUE)
+                      ),
     
     purrr::map(
       loocv_results,
@@ -190,13 +220,15 @@ loocv_peformance_metrics<-function(loocv_results){
     ) %>%
       purrr::map_df(
         .f = function(x)
-          specificity(
+          yardstick::specificity(
             x,
             estimate = preds,
             truth = obs,
-            estimator = "micro"
+            estimator = "macro"
           )
-      ) %>% summarise(looSpec_mean_micro = mean(.estimate, na.rm = TRUE)),
+      ) %>% summarise(looSpec_mean_macro = mean(.estimate, na.rm = TRUE),
+                      looSpec_sd_macro = sd(.estimate, na.rm = TRUE)
+                      ),
     
     purrr::map(
       loocv_results,
@@ -205,14 +237,16 @@ loocv_peformance_metrics<-function(loocv_results){
     ) %>%
       purrr::map_df(
         .f = function(x)
-          sensitivity(
+          yardstick::sensitivity(
             x,
             estimate = preds,
             truth = obs,
-            estimator = "micro"
+            estimator = "macro"
           )
-      ) %>% summarise(looSens_mean_micro = mean(.estimate, na.rm = TRUE)),
-    
+      ) %>% summarise(looSens_mean_macro = mean(.estimate, na.rm = TRUE),
+                      looSens_sd_macro = sd(.estimate,na.rm = TRUE)
+                      ),
+  
      
     purrr::map(
       loocv_results,
@@ -221,25 +255,25 @@ loocv_peformance_metrics<-function(loocv_results){
     ) %>%
       purrr::map_df(
         .f = function(x)
-          precision(
+          yardstick::precision(
             x,
             estimate = preds,
             truth = obs,
-            estimator = "micro"
+            estimator = "macro"
           )
-      ) %>% summarise(Prec_mean_micro = mean(.estimate, na.rm = TRUE))
+      ) %>% summarise(looPrec_mean_macro = mean(.estimate, na.rm = TRUE),
+                      looPrec_sd_macro = sd(.estimate, na.rm = TRUE)
+                      )
   )
- 
-  
   list(
     byclass = byclass,
     overall = list(
-                    looAcc_mean = overall_acc %>% mean(), 
-                    looAcc_sd = overall_acc %>% sd(),
-                    looKappa_mean = overall_kap %>% mean(), 
-                    looKappa_sd = overall_kap %>% sd()
+                    looAcc_mean_macro = overall_acc %>% mean(), 
+                    looAcc_sd_macro = overall_acc %>% sd(),
+                    looKappa_mean_macro = overall_kap %>% mean(), 
+                    looKappa_sd_macro = overall_kap %>% sd()
                    ),
-    micro = micro_metrics %>% as.list()
+    macro = macro_metrics %>% as.list()
   ) 
 }
 

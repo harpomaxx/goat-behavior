@@ -1,0 +1,527 @@
+---
+title: "Analize results"
+output: html_notebook
+---
+
+```{r setup, warning=FALSE}
+# CHANGE TO THE CORRESPONDING WORKING DIRECTORY
+knitr::opts_knit$set(root.dir = '/home/harpo/Dropbox/ongoing-work/git-repos/goat-behavior/')
+#knitr::opts_knit$set(root.dir = '/home/rodralez/hostdir/jobs/demand-planning/')
+```
+
+```{r}
+library(dplyr)
+suppressWarnings(suppressPackageStartupMessages(library(yardstick)))
+```
+
+```{r}
+source("code/R/functions/train_model_loocv.R")
+test_results <- readRDS("models/test_loocv/seba-caprino_model_test_loocv_results.rds")
+byclass <- lapply(test_results,function(x) x$byclass)
+
+     rownames <- do.call(rbind, byclass)   %>% rownames()
+  byclass<-do.call(rbind, byclass) %>% as.data.frame() %>% 
+    tibble::add_column(class =rownames) %>% 
+    group_by(class) %>% 
+    summarise(looSens_mean = mean(Sensitivity, na.rm =TRUE), 
+              looSens_sd =sd(Sensitivity, na.rm=TRUE),
+              looSpec_mean = mean(Specificity, na.rm =TRUE), 
+              looSpec_sd=sd(Specificity, na.rm=TRUE),
+              looBAcc_mean = mean(`Balanced Accuracy`, na.rm =TRUE), 
+              looBAcc_sd=sd(`Balanced Accuracy`, na.rm=TRUE),
+              looPrec_mean = mean(`Precision`, na.rm =TRUE), 
+              looPrec_sd =sd(`Precision`, na.rm=TRUE),
+    )
+  
+  
+metrics<-loocv_peformance_metrics(test_results)
+
+
+a<-c(metrics$overall,metrics$macro)
+names(a) %>% gsub(pattern = "(loo)(*.)", replacement = "\\1Test\\2", x = names(a))
+```
+# Calculate Caret confusion metric
+
+Most of the metrics does not consider MICRO and MACRO
+
+```{r}
+dataset <- readr::read_delim("data/split/seba-caprino_loocv.tsv",delim='\t')
+goat_model <- readRDS("models/boost/seba-caprino_model.rds")
+
+predictions<-predict(goat_model,dataset)
+cm<-caret::confusionMatrix(reference=as.factor(dataset$Activity),predictions,mode="everything")
+cm$overall
+
+dataset %>% group_by(Anim,Activity) %>% count()
+ samples<-create_loocv_samples(dataset) 
+samples
+```
+```{r}
+reshape2::melt(table(as.factor(predictions),as.factor(dataset$Activity))) %>% mutate(value=(value))  %>%   
+  group_by(Var2) %>% mutate(total=sum(value),percent=value/total) %>% ungroup() %>%
+  
+  ggplot(aes(x=Var1,y=Var2))+
+  geom_tile(aes(fill=percent), colour = "white") + 
+   geom_text(aes(label = sprintf("%d", value,percent*100)), color='black',vjust = 1)+
+   geom_text(aes(label = sprintf("(%1.1f%%)", percent*100)), color='black',vjust = 5,size=2.5)+
+  scale_fill_gradient(low = "white", high = "orange")+
+  xlab(" Predicted Activity ")+ylab(" Actual Activity")+
+  theme_minimal()+ theme(legend.position = "none")
+
+
+```
+
+```{r}
+source("code/R/functions/train_model.R")
+results<-predict_activity(model = goat_model,dataset = dataset)
+
+results$overall
+results$macro
+
+```
+
+
+## Calculate MACRO performance metrics.
+Kappa and Accuracy are the same as in caret confusion matrix. However, sens, spec and prec can differ when using MACRO or MICRO.
+
+```{r}
+macro_test_results<-data.frame(observations=as.factor(dataset$Activity),predictions=predictions)
+rbind(
+yardstick::accuracy(macro_test_results, 
+         estimate=predictions,
+         truth=observations,
+         estimator="macro"),
+
+yardstick::kap(macro_test_results,
+         estimate=predictions,
+         truth=observations,
+         estimator="macro"),
+
+yardstick::sensitivity(macro_test_results,
+         estimate=predictions,
+         truth=observations,
+         estimator="macro"),
+
+
+yardstick::specificity(macro_test_results,
+         estimate=predictions,
+         truth=observations,
+         estimator="macro"),
+
+yardstick::precision(macro_test_results,
+         estimate=predictions,
+         truth=observations,
+         estimator="macro")
+) %>% reshape2::melt() %>% select(.metric,value)
+```
+
+
+## calculate macro performance metrics per class
+
+According the these results, the metrics provided by the `caret` package are correct since there is no difference between MACRO and MACRO.
+Notice, however, the problem for calculating specificity per class using the `yardstick` package
+
+```{r warning=FALSE}
+macro_test_results<-data.frame(observations=as.factor(dataset$Activity),predictions=predictions)
+
+
+yardstick::sensitivity(macro_test_results %>% filter(observations=="R"),
+         estimate=predictions,
+         truth=observations,
+         estimator="macro") 
+
+yardstick::precision(macro_test_results %>% filter(predictions=="R"),
+         estimate=predictions,
+         truth=observations,
+         estimator="macro") 
+
+```
+
+```{r}
+macro_test_results %>% precision(predictions,observations)
+```
+
+`
+
+
+## Resample
+
+The idea is to apply and 1 vs all approach. We convert each class to 1 and the rest to 0 and then we apply the performance metric.
+```{r}
+goat_model$pred %>% mutate(pred=ifelse(pred=="G",1,0),
+                           obs=ifelse(obs=="G",1,0)) %>% mutate(pred=as.factor(pred),obs=as.factor(obs)) %>%
+  group_by(Resample) %>% 
+    yardstick::specificity(obs,pred) %>% summarise(reSens_G_Mean=mean(.estimate),reSens_G_sd=sd(.estimate)) 
+   
+```
+
+
+```{r warning=FALSE}
+  goat_model$pred %>% group_by(Resample,obs) %>% 
+    yardstick::specificity(obs,pred) %>% group_by(obs) %>% 
+    summarise(reSens_G_Mean=mean(.estimate),reSens_G_sd=sd(.estimate)) %>% 
+    filter(obs == "G") %>% select(-obs)
+```
+
+## Metrics per animal
+```{r}
+confusion_matrix_plot<-function(pred,ref){
+  
+
+plot<-reshape2::melt(table(as.factor(pred),as.factor(ref))) %>% mutate(value=(value))  %>%   
+  group_by(Var2) %>% mutate(total=sum(value),percent=value/total) %>% ungroup() %>%
+   ggplot(aes(x=Var1,y=Var2))+
+  geom_tile(aes(fill=percent), colour = "white") + 
+   geom_text(aes(label = sprintf("%d", value,percent*100)), color='black',vjust = 1,size=15)+
+   geom_text(aes(label = sprintf("(%1.1f%%)", percent*100)), color='black',vjust = 5,size=8)+
+  scale_fill_gradient(low = "white", high = "orange")+
+  xlab(" Predicted Activity ")+ylab(" Actual Activity")+
+  theme_minimal()+ theme(legend.position = "none",
+                         axis.title=element_text(size=30,face="bold"),
+                         axis.text=element_text(size=25)
+                         )
+
+plot
+}
+```
+
+
+```{r fig.height=12, fig.width=12}
+results<-readRDS("models/test_loocv/seba-caprino_model_test_loocv_results.rds")
+results[[8]]$byclass
+  byclass <- lapply(results, function(x)
+    x$byclass)
+byclass
+  rownames <- do.call(rbind, byclass)   %>% rownames()
+  
+   byclass<-do.call(rbind, byclass) %>% as.data.frame() 
+  byclass<- byclass %>% select(Sensitivity,Specificity,Precision)
+byclass %>% tibble::rownames_to_column() %>% readr::write_csv("/home/harpo/Dropbox/t.csv")
+
+
+confusion_matrix_plot(results[[7]]$predictions, results[[7]]$observations)
+confusion_matrix_plot(results[[8]]$predictions, results[[8]]$observations)
+confusion_matrix_plot(results[[9]]$predictions, results[[9]]$observations)
+```
+
+
+# SHAP Values
+```{r}
+dataset <- readr::read_delim("data/split/seba-caprino_loocv.tsv",delim='\t')
+goat_model <- readRDS("models/boost/seba-caprino_model.rds")
+```
+
+
+
+
+
+```{r}
+library(doMC)
+registerDoMC(cores = 10)
+
+model <- goat_model
+nsim<-20
+```
+
+
+
+
+
+
+## Calculate SHAP per animal and activity
+```{r}
+library(readr)
+source("code/R/functions/calculate_shap.R")
+source("code/R/functions/plot_shap.R")
+
+dataset <-
+  readr::read_delim("data/split/seba-caprino_loocv.tsv", delim = '\t')
+goat_model <- readRDS("models/boost/seba-caprino_model.rds")
+predictions <- predict(goat_model, dataset)
+selected_variables <-
+  readr::read_delim(
+    "data/topnfeatures/seba-caprino_selected_features.tsv",
+    col_types = cols(),
+    delim = '\t'
+  )
+new_dataset <-
+  dataset %>% select(selected_variables$variable, Anim, Activity)
+new_dataset <- cbind(new_dataset, predictions)
+
+shap_values <- calculate_shap(new_dataset, goat_model, nsim = 30)
+shap_values
+
+```
+
+
+
+```{r}
+library(doMC)
+doMC::registerDoMC(cores =4)
+```
+
+## Overall plots
+### Mean SHAP 
+```{r fig.height=8, fig.width=8, message=FALSE, warning=FALSE}
+source("code/R/functions/plot_shap.R")
+p<-shap_summary_plot(shap_values )
+p
+plotly::ggplotly(p)
+shap_beeswarm_plot(shap_values,new_dataset)+labs(title="")
+```
+
+
+### Dependency plots
+
+A new dependency plot considering activities and FP/TP
+
+```{r include=FALSE}
+source("code/R/functions/plot_shap.R")
+
+li<-list()
+li[[1]]<-dependency_plot("Steps",dataset = new_dataset,shap=shap_values)
+li[[2]]<-dependency_plot("prev_steps1",dataset = new_dataset,shap=shap_values)
+li[[3]]<-dependency_plot("%HeadDown",dataset = new_dataset,shap=shap_values)
+li[[4]]<-dependency_plot("prev_headdown1",dataset = new_dataset,shap=shap_values)
+li[[5]]<-dependency_plot("Active",dataset = new_dataset,shap=shap_values)
+li[[6]]<-dependency_plot("prev_Active1",dataset = new_dataset,shap=shap_values)
+li[[7]]<-dependency_plot("Standing",dataset = new_dataset,shap=shap_values)
+li[[8]]<-dependency_plot("prev_Standing1",dataset = new_dataset,shap=shap_values)
+```
+
+```{r fig.height=14, fig.width=8}
+do.call(grid.arrange, c(li, ncol = 1))
+```
+
+
+### Analysis per animal
+
+#### Dependecy Plots
+##### Anim 13
+```{r fig.height=10, fig.width=12, include=FALSE}
+source("code/R/functions/plot_shap.R")
+li<-list()
+li[[1]]<-dependency_plot_anim("Steps",dataset = new_dataset,shap=shap_values,anim="a13")
+li[[2]]<-dependency_plot_anim("prev_steps1",dataset = new_dataset,shap=shap_values,anim="a13")
+li[[3]]<-dependency_plot_anim("%HeadDown",dataset = new_dataset,shap=shap_values,anim="a13")
+li[[4]]<-dependency_plot_anim("prev_headdown1",dataset = new_dataset,shap=shap_values,anim="a13")
+li[[5]]<-dependency_plot_anim("Active",dataset = new_dataset,shap=shap_values,anim="a13")
+li[[6]]<-dependency_plot_anim("prev_Active1",dataset = new_dataset,shap=shap_values,anim="a13")
+li[[7]]<-dependency_plot_anim("Standing",dataset = new_dataset,shap=shap_values,anim="a13")
+li[[8]]<-dependency_plot_anim("prev_Standing1",dataset = new_dataset,shap=shap_values,anim="a13")
+#dev.off()
+```
+
+
+```{r fig.height=15, fig.width=5}
+do.call(grid.arrange, c(li, ncol = 1))
+```
+##### Anim 5
+```{r fig.height=2, fig.width=8, include=FALSE}
+source("code/R/functions/plot_shap.R")
+li<-list()
+li[[1]]<-dependency_plot_anim("Steps",dataset = new_dataset,shap=shap_values,anim="a5")
+li[[2]]<-dependency_plot_anim("prev_steps1",dataset = new_dataset,shap=shap_values,anim="a5")
+li[[3]]<-dependency_plot_anim("%HeadDown",dataset = new_dataset,shap=shap_values,anim="a5")
+li[[4]]<-dependency_plot_anim("prev_headdown1",dataset = new_dataset,shap=shap_values,anim="a5")
+li[[5]]<-dependency_plot_anim("Active",dataset = new_dataset,shap=shap_values,anim="a5")
+li[[6]]<-dependency_plot_anim("prev_Active1",dataset = new_dataset,shap=shap_values,anim="a5")
+li[[7]]<-dependency_plot_anim("Standing",dataset = new_dataset,shap=shap_values,anim="a5")
+li[[8]]<-dependency_plot_anim("prev_Standing1",dataset = new_dataset,shap=shap_values,anim="a5")
+#dev.off()
+```
+
+
+```{r fig.height=15, fig.width=4}
+do.call(grid.arrange, c(li, ncol = 1))
+```
+##### Anim 16
+```{r include=FALSE}
+source("code/R/functions/plot_shap.R")
+li<-list()
+li[[1]]<-dependency_plot_anim("Steps",dataset = new_dataset,shap=shap_values,anim="a16")
+li[[2]]<-dependency_plot_anim("prev_steps1",dataset = new_dataset,shap=shap_values,anim="a16")
+li[[3]]<-dependency_plot_anim("%HeadDown",dataset = new_dataset,shap=shap_values,anim="a5")
+li[[4]]<-dependency_plot_anim("prev_headdown1",dataset = new_dataset,shap=shap_values,anim="a16")
+li[[5]]<-dependency_plot_anim("Active",dataset = new_dataset,shap=shap_values,anim="a16")
+li[[6]]<-dependency_plot_anim("prev_Active1",dataset = new_dataset,shap=shap_values,anim="a16")
+li[[7]]<-dependency_plot_anim("Standing",dataset = new_dataset,shap=shap_values,anim="a16")
+li[[8]]<-dependency_plot_anim("prev_Standing1",dataset = new_dataset,shap=shap_values,anim="a16")
+```
+ 
+```{r fig.height=14, fig.width=4}
+do.call(grid.arrange, c(li, ncol = 1))
+```
+ 
+### Contribution Plots
+
+##### Anim 13
+```{r}
+shap_values[which(shap_values$Anim == 'a13'),]
+shap_values[which(shap_values$Anim == 'a13' &
+                             shap_values$class == "GM"), 1:18]
+
+```
+
+###### class G
+```{r fig.height=4, fig.width=8}
+
+source("code/R/functions/calculate_shap.R")
+source("code/R/functions/plot_shap.R")
+
+anim_id <- 'a13'
+activity <- 'G'
+new_dataset_filtered<-new_dataset[ which(new_dataset$Anim == anim_id & new_dataset$Activity == activity),]
+new_dataset_filtered
+
+
+shap_values_G <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_G,"G")
+shap_values_GM <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_GM,"GM")
+p1 <- contribution_plot(shap_values_G,num_row = 1) + labs(title="Anim a13: class G (FN)", subtitle = "SHAP analysis for class G") 
+p2 <- contribution_plot(shap_values_GM,num_row = 1) + labs(title="Anim a13: class G (FN)",subtitle = "SHAP analysis for class GM") 
+
+p3 <- contribution_plot(shap_values_G,num_row = 5) + labs(title="Anim a13: class G (TP)", subtitle = "SHAP analysis for class G") 
+p4 <- contribution_plot(shap_values_GM,num_row = 5) + labs(title="Anim a13: class G (TP)",subtitle = "SHAP analysis for class GM") 
+
+grid.arrange(p3, p4, p1, p2, nrow = 2 )
+list("G"=shap_values_G[5,1:15] %>% sum(),
+"GM"=shap_values_GM[5,1:15] %>% sum()) %>% as.data.frame()
+```
+
+###### class GM
+```{r fig.height=4, fig.width=8}
+anim_id <- 'a13'
+activity <- 'GM'
+new_dataset_filtered<-new_dataset[ which(new_dataset$Anim == anim_id & new_dataset$Activity == activity),]
+new_dataset_filtered
+
+
+shap_values_G <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_G,"G")
+shap_values_GM <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_GM,"GM")
+p1 <- contribution_plot(shap_values_GM,num_row = 8) + labs(title="Anim a13: class GM (FN)", subtitle = "SHAP analysis for class GM") 
+p2 <- contribution_plot(shap_values_G,num_row = 8) + labs(title="Anim a13: class GM, (FN)",subtitle = "SHAP analysis for class G") 
+
+p3 <- contribution_plot(shap_values_GM,num_row = 2) + labs(title="Anim a13: class GM (TP)", subtitle = "SHAP analysis for class GM") 
+p4 <- contribution_plot(shap_values_G,num_row = 2) + labs(title="Anim a13: class GM (TP)",subtitle = "SHAP analysis for class G") 
+
+grid.arrange(p3, 
+             p4, 
+             p1, 
+             p2, nrow = 2 )
+
+list("G"=shap_values_G[2,1:15] %>% sum(),
+"GM"=shap_values_GM[2,1:15] %>% sum()) %>% as.data.frame()
+```
+
+
+#####  Anim 5
+```{r}
+
+shap_values[ which(shap_values$Anim == 'a5'),]
+shap_values[which(shap_values$Anim == 'a5' &
+                             shap_values$class == "GM"), 1:18]
+
+```
+
+
+###### class G
+```{r fig.height=4, fig.width=8}
+anim_id <- 'a5'
+activity <- 'G'
+new_dataset_filtered<-new_dataset[ which(new_dataset$Anim == anim_id & new_dataset$Activity == activity),]
+new_dataset_filtered
+
+
+shap_values_G <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_G,"G")
+shap_values_GM <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_GM,"GM")
+p1 <- contribution_plot(shap_values_G,num_row = 3) + labs(title="Anim a5: class G (FN)", subtitle = "SHAP analysis for class G") 
+p2 <- contribution_plot(shap_values_GM,num_row = 3) + labs(title="Anim a5: class G (FN)",subtitle = "SHAP analysis for class GM") 
+
+p3 <- contribution_plot(shap_values_G,num_row = 1) + labs(title="Anim a5: class G (TP)", subtitle = "SHAP analysis for class G") 
+p4 <- contribution_plot(shap_values_GM,num_row = 1) + labs(title="Anim a5: class G (TP)",subtitle = "SHAP analysis for class GM") 
+
+
+
+
+grid.arrange(p3, p4, p1, p2, nrow = 2 )
+list("G"=shap_values_G[1,1:15] %>% sum(),
+"GM"=shap_values_GM[1,1:15] %>% sum()) %>% as.data.frame()
+```
+###### class GM
+```{r fig.height=4, fig.width=8}
+anim_id <- 'a5'
+activity <- 'GM'
+new_dataset_filtered<-new_dataset[ which(new_dataset$Anim == anim_id & new_dataset$Activity == activity),]
+new_dataset_filtered
+
+
+shap_values_G <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_G,"G")
+shap_values_GM <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_GM,"GM")
+p1 <- contribution_plot(shap_values_GM,num_row = 4) + labs(title="Anim a5: class GM (FN)", subtitle = "SHAP analysis for class GM") 
+p2 <- contribution_plot(shap_values_G,num_row = 4) + labs(title="Anim a5: class GM (FN)",subtitle = "SHAP analysis for class G") 
+
+p3 <- contribution_plot(shap_values_GM,num_row = 3) + labs(title="Anim a5: class GM (TP)", subtitle = "SHAP analysis for class GM") 
+p4 <- contribution_plot(shap_values_G,num_row = 3) + labs(title="Anim a5: class GM (TP)",subtitle = "SHAP analysis for class G") 
+
+grid.arrange(p3, p4, p1, p2, nrow = 2 )
+list("G"=shap_values_G[4,1:15] %>% sum(),
+"GM"=shap_values_GM[4,1:15] %>% sum()) %>% as.data.frame()
+```
+
+
+#####  Anim 16
+###### class G
+```{r fig.height=4, fig.width=8}
+anim_id <- 'a16'
+activity <- 'G'
+new_dataset_filtered<-new_dataset[ which(new_dataset$Anim == anim_id & new_dataset$Activity == activity),]
+new_dataset_filtered
+
+
+shap_values_G <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 200, p_function_G,"G")
+shap_values_GM <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim =200, p_function_GM,"GM")
+p1 <- contribution_plot(shap_values_G,num_row = 1) + labs(title="Anim a16: class G (FN)", subtitle = "SHAP analysis for class G") 
+p2 <- contribution_plot(shap_values_GM,num_row = 1) + labs(title="Anim a16: class G (FN)",subtitle = "SHAP analysis for class GM") 
+
+p3 <- contribution_plot(shap_values_G,num_row = 6) + labs(title="Anim a16: class G (TP)", subtitle = "SHAP analysis for class G") 
+p4 <- contribution_plot(shap_values_GM,num_row = 6) + labs(title="Anim a16: class G (TP)",subtitle = "SHAP analysis for class GM") 
+
+
+
+grid.arrange(p3, p4, p1, p2, nrow = 2 )
+list("G"=shap_values_G[6,1:15] %>% sum(),
+"GM"=shap_values_GM[6,1:15] %>% sum()) %>% as.data.frame()
+
+```
+
+
+```{r fig.height=4, fig.width=8}
+predictions_2 <- predict(goat_model, dataset, type = 'prob')
+prob_dataset<-cbind(new_dataset,predictions_2)
+prob_dataset[ which(prob_dataset$Anim == anim_id & prob_dataset$Activity == activity),][6,]
+
+
+```
+
+###### class GM
+```{r fig.height=4, fig.width=4}
+anim_id <- 'a16'
+activity <- 'G'
+new_dataset_filtered<-new_dataset[ which(new_dataset$Anim == anim_id & new_dataset$Activity == activity),]
+new_dataset_filtered
+
+
+shap_values_G <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_G,"G")
+shap_values_GM <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_GM,"GM")
+#p1 <- contribution_plot(shap_values_G,num_row = 1) + labs(title="Anim a5: class G (FN)", subtitle = "SHAP analysis for class G") 
+#p2 <- contribution_plot(shap_values_GM,num_row = 1) + labs(title="Anim a5: class G (FN)",subtitle = "SHAP analysis for class GM") 
+
+p3 <- contribution_plot(shap_values_G,num_row = 1) + labs(title="Anim a16: class GM (TP)", subtitle = "SHAP analysis for class G") 
+p4 <- contribution_plot(shap_values_GM,num_row = 1) + labs(title="Anim a16: class GM (TP)",subtitle = "SHAP analysis for class GM") 
+grid.arrange(p3, p4, nrow = 2 )
+
+list("G"=shap_values_G[,1:15] %>% sum(),
+"GM"=shap_values_GM[1,1:15] %>% sum()) %>% as.data.frame()
+```
+```
+

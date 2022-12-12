@@ -84,10 +84,6 @@ if (opt$input %>% is.null()  ||
   dir.create(dirname(opt$model), showWarnings = FALSE)
   saveRDS(boost_model, file = paste0(opt$model,"_model.rds"))
   
-  ## Save Metric
-  #boost_model$results[c(8,10,11,12)] %>% 
-  #  as.yaml() %>% write("metrics/train_model.yaml")
-  
   ## Save resample metrics
   boost_model$resample %>% select(Accuracy,AUC,Mean_Sensitivity, Mean_Specificity,Mean_Precision,Kappa,Mean_Balanced_Accuracy) %>% 
     summarise(#mean_AUC=mean(AUC),sd_AUC=sd(AUC), 
@@ -101,96 +97,127 @@ if (opt$input %>% is.null()  ||
     as.yaml() %>% write("metrics/train_model_resample.yaml")
   
   
-  ## Save resample metrics per class
+  # Save resample metrics per class
+  # The idea is to apply and 1 vs all approach. 
+  # We convert each class to 1 and the rest to 0 and then we apply the performance metric.
   ### Class G
-  sens<-boost_model$pred %>% group_by(Resample,obs) %>% 
-    yardstick::sensitivity(obs,pred) %>% group_by(obs) %>% 
-    summarise(reSens_G_Mean=mean(.estimate),reSens_G_sd=sd(.estimate)) %>% 
-    filter(obs == "G") %>% select(-obs)
-  spec<-boost_model$pred %>% group_by(Resample,obs) %>% 
-    yardstick::specificity(obs,pred) %>% group_by(obs) %>% 
-    summarise(reSpec_G_Mean=mean(.estimate),reSpec_G_sd=sd(.estimate)) %>% 
-    filter(obs == "G") %>% select(-obs)
-  prec<-boost_model$pred %>% group_by(Resample,obs) %>% 
-    yardstick::precision(obs,pred) %>% group_by(obs) %>% 
-    summarise(rePrec_G_Mean=mean(.estimate),rePrec_G_sd=sd(.estimate)) %>% 
-    filter(obs == "G") %>% select(-obs)
+  
+  G_preds<-boost_model$pred %>% 
+    mutate(pred=ifelse(pred=="G",1,0), obs=ifelse(obs=="G",1,0)) %>%
+    mutate(pred=as.factor(pred),obs=as.factor(obs))
+  sens<-G_preds %>% group_by(Resample) %>% 
+    yardstick::sensitivity(obs,pred) %>% 
+    summarise(reSens_G_Mean=mean(.estimate),reSens_G_sd=sd(.estimate)) 
+  prec<-G_preds %>% group_by(Resample) %>% 
+    yardstick::precision(obs,pred) %>% 
+    summarise(rePrec_G_Mean=mean(.estimate),rePrec_G_sd=sd(.estimate)) 
+  spec<-G_preds %>% group_by(Resample) %>% 
+    yardstick::specificity(obs,pred) %>% 
+    summarise(reSpec_G_Mean=mean(.estimate),reSpec_G_sd=sd(.estimate))
   cbind(sens,spec,prec) %>%  as.yaml() %>% 
     write("metrics/train_model_resample_metrics_G.yaml")
+  
   ### Class GM
-  sens<-boost_model$pred %>% group_by(Resample,obs) %>% 
-    yardstick::sensitivity(obs,pred) %>% group_by(obs) %>% 
-    summarise(reSens_GM_Mean=mean(.estimate),reSens_GM_sd=sd(.estimate)) %>% 
-    filter(obs == "GM") %>% select(-obs)
-  spec<-boost_model$pred %>% group_by(Resample,obs) %>% 
-    yardstick::specificity(obs,pred) %>% group_by(obs) %>% 
-    summarise(reSpec_GM_Mean=mean(.estimate),reSpec_GM_sd=sd(.estimate)) %>% 
-    filter(obs == "GM") %>% select(-obs)
-  prec<-boost_model$pred %>% group_by(Resample,obs) %>% 
-    yardstick::precision(obs,pred) %>% group_by(obs) %>% 
-    summarise(rePrec_GM_Mean=mean(.estimate),rePrec_GM_sd=sd(.estimate)) %>% 
-    filter(obs == "GM") %>% select(-obs)
+  
+  GM_preds<-boost_model$pred %>% 
+    mutate(pred=ifelse(pred=="GM",1,0), obs=ifelse(obs=="GM",1,0)) %>%
+    mutate(pred=as.factor(pred),obs=as.factor(obs))
+  sens<-GM_preds %>% group_by(Resample) %>% 
+    yardstick::sensitivity(obs,pred) %>% 
+    summarise(reSens_GM_Mean=mean(.estimate),reSens_GM_sd=sd(.estimate)) 
+  prec<-GM_preds %>% group_by(Resample) %>% 
+    yardstick::precision(obs,pred) %>% 
+    summarise(rePrec_GM_Mean=mean(.estimate),rePrec_GM_sd=sd(.estimate)) 
+  spec<-GM_preds %>% group_by(Resample) %>% 
+    yardstick::specificity(obs,pred) %>% 
+    summarise(reSpec_GM_Mean=mean(.estimate),reSpec_GM_sd=sd(.estimate)) 
   cbind(sens,spec,prec) %>%  as.yaml() %>% 
     write("metrics/train_model_resample_metrics_GM.yaml")
+   
   ### Class R
-  sens<-boost_model$pred %>% group_by(Resample,obs) %>% 
-    yardstick::sensitivity(obs,pred) %>% group_by(obs) %>% 
-    summarise(reSens_R_Mean=mean(.estimate),reSens_R_sd=sd(.estimate)) %>% 
-    filter(obs == "R") %>% select(-obs)
-  spec<-boost_model$pred %>% group_by(Resample,obs) %>% 
-    yardstick::specificity(obs,pred) %>% group_by(obs) %>% 
-    summarise(reSpec_R_Mean=mean(.estimate),reSpec_R_sd=sd(.estimate)) %>% 
-    filter(obs == "R") %>% select(-obs)
-  prec<-boost_model$pred %>% group_by(Resample,obs) %>% 
-    yardstick::precision(obs,pred) %>% group_by(obs) %>% 
-    summarise(rePrec_R_Mean=mean(.estimate),rePrec_R_sd=sd(.estimate)) %>% 
-    filter(obs == "R") %>% select(-obs)
+  
+  R_preds<-boost_model$pred %>% 
+    mutate(pred=ifelse(pred=="R",1,0), obs=ifelse(obs=="R",1,0)) %>%
+    mutate(pred=as.factor(pred),obs=as.factor(obs))
+  sens<-R_preds %>% group_by(Resample) %>% 
+    yardstick::sensitivity(obs,pred) %>% 
+    summarise(reSens_R_Mean=mean(.estimate),reSens_R_sd=sd(.estimate)) 
+  prec<-R_preds %>% group_by(Resample) %>% 
+    yardstick::precision(obs,pred) %>% 
+    summarise(rePrec_R_Mean=mean(.estimate),rePrec_R_sd=sd(.estimate)) 
+  spec<-R_preds %>% group_by(Resample) %>% 
+    yardstick::specificity(obs,pred) %>% 
+    summarise(reSpec_R_Mean=mean(.estimate),reSpec_R_sd=sd(.estimate)) 
   cbind(sens,spec,prec) %>%  as.yaml() %>% 
     write("metrics/train_model_resample_metrics_R.yaml")
   
   ### Class W
-  sens<-boost_model$pred %>% group_by(Resample,obs) %>% 
-    yardstick::sensitivity(obs,pred) %>% group_by(obs) %>% 
-    summarise(reSens_W_Mean=mean(.estimate),reSens_W_sd=sd(.estimate)) %>% 
-    filter(obs == "W") %>% select(-obs)
-  spec<-boost_model$pred %>% group_by(Resample,obs) %>% 
-    yardstick::specificity(obs,pred) %>% group_by(obs) %>% 
-    summarise(reSpec_W_Mean=mean(.estimate),reSpec_W_sd=sd(.estimate)) %>% 
-    filter(obs == "W") %>% select(-obs)
-  prec<-boost_model$pred %>% group_by(Resample,obs) %>% 
-    yardstick::precision(obs,pred) %>% group_by(obs) %>% 
-    summarise(rePrec_W_Mean=mean(.estimate),rePrec_W_sd=sd(.estimate)) %>% 
-    filter(obs == "W") %>% select(-obs)
+  
+  W_preds<-boost_model$pred %>% 
+    mutate(pred=ifelse(pred=="W",1,0), obs=ifelse(obs=="W",1,0)) %>%
+    mutate(pred=as.factor(pred),obs=as.factor(obs))
+  sens<-W_preds %>% group_by(Resample) %>% 
+    yardstick::sensitivity(obs,pred) %>% 
+    summarise(reSens_W_Mean=mean(.estimate),reSens_W_sd=sd(.estimate)) 
+  prec<-W_preds %>% group_by(Resample) %>% 
+    yardstick::precision(obs,pred) %>% 
+    summarise(rePrec_W_Mean=mean(.estimate),rePrec_W_sd=sd(.estimate)) 
+  spec<-W_preds %>% group_by(Resample) %>% 
+    yardstick::specificity(obs,pred) %>% 
+    summarise(reSpec_W_Mean=mean(.estimate),reSpec_W_sd=sd(.estimate)) 
   cbind(sens,spec,prec) %>%  as.yaml() %>% 
     write("metrics/train_model_resample_metrics_W.yaml")
-  
-  
+ 
   ## Save predictions results
   results<-predict_activity(boost_model,test_dataset)
   #write_csv(results$cm %>% as.data.frame() %>% tibble::rownames_to_column("class"), "metrics/train_model_cm.csv")
   write_csv(data.frame(predicted=results$predictions,observed=test_dataset$Activity),"metrics/train_model_predictions.csv")
+  
+  
+  ## Save results MACRO results for test_datataset
+  c(results$overall,results$macro) %>% as.yaml %>%
+    write("metrics/train_model_metrics_macro_overall.yaml")
+  
   ## save metrics per class
   results$cm %>% as.data.frame() %>% tibble::rownames_to_column("Activity") %>% 
     filter(Activity=="Class: G") %>% 
     select("Sensitivity","Specificity","Precision","Balanced Accuracy") %>%
+    rename(testSens_G = Sensitivity, 
+           testSpec_G = Specificity, 
+           testPrec_G = Precision, 
+           testBacc_G = `Balanced Accuracy`) %>%
+    
+    
     as.yaml() %>% 
     write("metrics/train_model_metrics_G.yaml")
   
   results$cm %>% as.data.frame() %>% tibble::rownames_to_column("Activity") %>% 
     filter(Activity =="Class: GM") %>% 
     select("Sensitivity","Specificity","Precision","Balanced Accuracy") %>%
+    rename(testSens_GM = Sensitivity, 
+           testSpec_GM = Specificity, 
+           testPrec_GM = Precision, 
+           testBacc_GM = `Balanced Accuracy`) %>%
     as.yaml() %>% 
     write("metrics/train_model_metrics_GM.yaml")
   
   results$cm %>% as.data.frame() %>% tibble::rownames_to_column("Activity") %>% 
     filter(Activity =="Class: W") %>% 
     select("Sensitivity","Specificity","Precision","Balanced Accuracy") %>%
+    rename(testSens_W = Sensitivity, 
+           testSpec_W = Specificity, 
+           testPrec_W = Precision, 
+           testBacc_W = `Balanced Accuracy`) %>%
     as.yaml() %>% 
     write("metrics/train_model_metrics_W.yaml")
   
   results$cm %>% as.data.frame() %>% tibble::rownames_to_column("Activity") %>% 
     filter(Activity =="Class: R") %>% 
     select("Sensitivity","Specificity","Precision","Balanced Accuracy") %>%
+    rename(testSens_R = Sensitivity, 
+           testSpec_R = Specificity, 
+           testPrec_R = Precision, 
+           testBacc_R = `Balanced Accuracy`) %>%
     as.yaml() %>% 
     write("metrics/train_model_metrics_R.yaml")
   

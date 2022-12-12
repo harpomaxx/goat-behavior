@@ -1,5 +1,5 @@
-Sensitivity: 0.7209302
-Specificity: 0.8603066
-Precision: 0.4305556
-Balanced Accuracy: 0.7906184
+testSens_R: 0.75
+testSpec_R: 0.9826087
+testPrec_R: 0.8181818
+testBacc_R: 0.8663043
 

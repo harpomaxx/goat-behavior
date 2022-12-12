@@ -1,0 +1,9 @@
+TestlooBAcc_sd: 0.058802
+TestlooSens_sd: 0.1863397
+TestlooSpec_sd: 0.0752388
+TestlooPrec_sd: 0.1671037
+TestlooSens_mean: 0.7128013
+TestlooSpec_mean: 0.9216276
+TestlooBAcc_mean: 0.8049397
+TestlooPrec_mean: 0.7391478
+

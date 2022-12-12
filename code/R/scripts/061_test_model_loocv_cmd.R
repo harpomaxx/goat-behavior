@@ -1,5 +1,5 @@
 #!/bin/Rscript
-#  test model 
+#  test model per average.
 
 source("code/R/functions/train_model_loocv.R")
 suppressPackageStartupMessages(library(optparse))
@@ -67,6 +67,15 @@ if (opt$input %>% is.null()  ||
     filter(class  =="Class: R") %>% 
     select("looSens_mean","looSpec_mean","looPrec_mean","looBAcc_mean",
            "looSens_sd","looSpec_sd","looPrec_sd","looBAcc_sd") %>%
+    rename ( TestlooSens_R_mean = looSens_mean,
+             TestlooSpec_R_mean = looSpec_mean,
+             TestlooPrec_R_mean = looPrec_mean,
+             TestlooBAcc_R_mean = looBAcc_mean,
+             TestlooSens_R_sd   = looSens_sd,
+             TestlooSpec_R_sd   = looSpec_sd,
+             TestlooPrec_R_sd   = looPrec_sd,
+             TestlooBAcc_R_sd   = looBAcc_sd
+    ) %>%
     as.yaml() %>% 
     write("metrics/test_model_loocv_metrics_R.yaml")
   
@@ -75,6 +84,15 @@ if (opt$input %>% is.null()  ||
     
     select("looSens_mean","looSpec_mean","looPrec_mean","looBAcc_mean",
            "looSens_sd","looSpec_sd","looPrec_sd","looBAcc_sd") %>%
+    rename ( TestlooSens_W_mean = looSens_mean,
+             TestlooSpec_W_mean = looSpec_mean,
+             TestlooPrec_W_mean = looPrec_mean,
+             TestlooBAcc_W_mean = looBAcc_mean,
+             TestlooSens_W_sd   = looSens_sd,
+             TestlooSpec_W_sd   = looSpec_sd,
+             TestlooPrec_W_sd   = looPrec_sd,
+             TestlooBAcc_W_sd   = looBAcc_sd
+    ) %>%
     as.yaml() %>% 
     write("metrics/test_model_loocv_metrics_W.yaml")
   
@@ -82,6 +100,15 @@ if (opt$input %>% is.null()  ||
     filter(class  =="Class: GM") %>% 
     select("looSens_mean","looSpec_mean","looPrec_mean","looBAcc_mean",
            "looSens_sd","looSpec_sd","looPrec_sd","looBAcc_sd") %>%
+    rename (TestlooSens_GM_mean = looSens_mean,
+            TestlooSpec_GM_mean = looSpec_mean,
+            TestlooPrec_GM_mean = looPrec_mean,
+            TestlooBAcc_GM_mean = looBAcc_mean,
+            TestlooSens_GM_sd   = looSens_sd,
+            TestlooSpec_GM_sd   = looSpec_sd,
+            TestlooPrec_GM_sd   = looPrec_sd,
+            TestlooBAcc_GM_sd   = looBAcc_sd
+    ) %>%
     as.yaml() %>% 
     write("metrics/test_model_loocv_metrics_GM.yaml")
   
@@ -89,28 +116,42 @@ if (opt$input %>% is.null()  ||
     filter(class  =="Class: G") %>% 
     select("looSens_mean","looSpec_mean","looPrec_mean","looBAcc_mean",
            "looSens_sd","looSpec_sd","looPrec_sd","looBAcc_sd") %>%
+    rename (TestlooSens_G_mean = looSens_mean,
+            TestlooSpec_G_mean = looSpec_mean,
+            TestlooPrec_G_mean = looPrec_mean,
+            TestlooBAcc_G_mean = looBAcc_mean,
+            TestlooSens_G_sd   = looSens_sd,
+            TestlooSpec_G_sd   = looSpec_sd,
+            TestlooPrec_G_sd   = looPrec_sd,
+            TestlooBAcc_G_sd   = looBAcc_sd
+    ) %>%
     as.yaml() %>% 
     write("metrics/test_model_loocv_metrics_G.yaml")
   
+  # Average the metrics by class
   metrics$byclass %>% 
     select("looSens_mean","looSpec_mean","looBAcc_mean","looPrec_mean") %>%
-    summarise(looBAcc_sd=sd(looBAcc_mean,na.rm=TRUE),
-              looSens_sd=sd(looSens_mean,na.rm=TRUE),
-              looSpec_sd=sd(looSpec_mean,na.rm=TRUE),
-              looPrec_sd=sd(looPrec_mean,na.rm=TRUE),
-              looSens_mean=mean(looSens_mean,na.rm=TRUE),
-              looSpec_mean=mean(looSpec_mean,na.rm=TRUE),
-              looBAcc_mean=mean(looBAcc_mean,na.rm=TRUE),
-              looPrec_mean=mean(looPrec_mean,na.rm=TRUE)
+    summarise(TestlooBAcc_sd=sd(looBAcc_mean,na.rm=TRUE),
+              TestlooSens_sd=sd(looSens_mean,na.rm=TRUE),
+              TestlooSpec_sd=sd(looSpec_mean,na.rm=TRUE),
+              TestlooPrec_sd=sd(looPrec_mean,na.rm=TRUE),
+              TestlooSens_mean=mean(looSens_mean,na.rm=TRUE),
+              TestlooSpec_mean=mean(looSpec_mean,na.rm=TRUE),
+              TestlooBAcc_mean=mean(looBAcc_mean,na.rm=TRUE),
+              TestlooPrec_mean=mean(looPrec_mean,na.rm=TRUE)
     ) %>%
     as.yaml() %>% 
-    write("metrics/test_model_loocv_metrics_macro.yaml")
+    write("metrics/test_model_loocv_metrics_avg_all.yaml")
   
-  metrics$micro %>% as.yaml %>%
-    write("metrics/test_model_loocv_metrics_micro.yaml")
+  overall<-c(metrics$overall,metrics$macro)
+  names(overall)<-names(overall) %>% gsub(pattern = "(loo)(*.)", 
+                                          replacement = "Test\\1\\2", 
+                                          x = names(overall))
+  overall %>% as.yaml %>%
+    write("metrics/test_model_loocv_metrics_macro_overall.yaml")
   
-  metrics$overall %>% as.yaml %>%
-    write("metrics/test_model_loocv_metrics_overall.yaml")
+  #metrics$overall %>% as.yaml %>%
+  #write("metrics/test_model_loocv_metrics_overall.yaml")
   
   ## Save model 
   dir.create(dirname(opt$results), showWarnings = FALSE)
