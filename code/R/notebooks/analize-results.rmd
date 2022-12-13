@@ -275,7 +275,7 @@ shap_beeswarm_plot(shap_values,new_dataset)+labs(title="")
 
 A new dependency plot considering activities and FP/TP
 
-```{r include=FALSE}
+```{r fig.height=4, fig.width=8, include=FALSE}
 source("code/R/functions/plot_shap.R")
 
 li<-list()
@@ -287,9 +287,13 @@ li[[5]]<-dependency_plot("Active",dataset = new_dataset,shap=shap_values)
 li[[6]]<-dependency_plot("prev_Active1",dataset = new_dataset,shap=shap_values)
 li[[7]]<-dependency_plot("Standing",dataset = new_dataset,shap=shap_values)
 li[[8]]<-dependency_plot("prev_Standing1",dataset = new_dataset,shap=shap_values)
+li[[9]]<-dependency_plot("X_Act",dataset = new_dataset, shap=shap_values)
+li[[10]]<-dependency_plot("Y_Act",dataset = new_dataset, shap=shap_values)
+li[[11]]<-dependency_plot("DBA123",dataset = new_dataset, shap=shap_values)
+li[[12]]<-dependency_plot("DFA123",dataset = new_dataset, shap=shap_values)
 ```
 
-```{r fig.height=14, fig.width=8}
+```{r fig.height=14, fig.width=12}
 do.call(grid.arrange, c(li, ncol = 1))
 ```
 
@@ -309,11 +313,13 @@ li[[5]]<-dependency_plot_anim("Active",dataset = new_dataset,shap=shap_values,an
 li[[6]]<-dependency_plot_anim("prev_Active1",dataset = new_dataset,shap=shap_values,anim="a13")
 li[[7]]<-dependency_plot_anim("Standing",dataset = new_dataset,shap=shap_values,anim="a13")
 li[[8]]<-dependency_plot_anim("prev_Standing1",dataset = new_dataset,shap=shap_values,anim="a13")
+li[[9]]<-dependency_plot_anim("X_Act",dataset = new_dataset,shap=shap_values,anim="a13")
+li[[10]]<-dependency_plot_anim("Y_Act",dataset = new_dataset,shap=shap_values,anim="a13")
 #dev.off()
 ```
 
 
-```{r fig.height=15, fig.width=5}
+```{r fig.height=15, fig.width=8}
 do.call(grid.arrange, c(li, ncol = 1))
 ```
 ##### Anim 5
@@ -328,11 +334,14 @@ li[[5]]<-dependency_plot_anim("Active",dataset = new_dataset,shap=shap_values,an
 li[[6]]<-dependency_plot_anim("prev_Active1",dataset = new_dataset,shap=shap_values,anim="a5")
 li[[7]]<-dependency_plot_anim("Standing",dataset = new_dataset,shap=shap_values,anim="a5")
 li[[8]]<-dependency_plot_anim("prev_Standing1",dataset = new_dataset,shap=shap_values,anim="a5")
+li[[9]]<-dependency_plot_anim("X_Act",dataset = new_dataset,shap=shap_values,anim="a5")
+li[[10]]<-dependency_plot_anim("Y_Act",dataset = new_dataset,shap=shap_values,anim="a5")
+#li[[8]]<-dependency_plot_anim("",dataset = new_dataset,shap=shap_values,anim="a5")
 #dev.off()
 ```
 
 
-```{r fig.height=15, fig.width=4}
+```{r fig.height=20, fig.width=12}
 do.call(grid.arrange, c(li, ncol = 1))
 ```
 ##### Anim 16
@@ -364,24 +373,26 @@ shap_values[which(shap_values$Anim == 'a13' &
 ```
 
 ###### class G
-```{r fig.height=4, fig.width=8}
+```{r fig.height=8, fig.width=12}
 
 source("code/R/functions/calculate_shap.R")
 source("code/R/functions/plot_shap.R")
 
 anim_id <- 'a13'
 activity <- 'G'
+new_dataset_scaled <- new_dataset %>% mutate_if(is.numeric,range01)
+new_dataset_scaled_filtered<-new_dataset_scaled[which(new_dataset_scaled$Anim == anim_id & new_dataset_scaled$Activity == activity),]
+
 new_dataset_filtered<-new_dataset[ which(new_dataset$Anim == anim_id & new_dataset$Activity == activity),]
 new_dataset_filtered
 
-
 shap_values_G <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_G,"G")
 shap_values_GM <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_GM,"GM")
-p1 <- contribution_plot(shap_values_G,num_row = 1) + labs(title="Anim a13: class G (FN)", subtitle = "SHAP analysis for class G") 
-p2 <- contribution_plot(shap_values_GM,num_row = 1) + labs(title="Anim a13: class G (FN)",subtitle = "SHAP analysis for class GM") 
+p1 <- contribution_plot_w_feature(shap_values_G,new_dataset_scaled_filtered,num_row = 1) + labs(title="Anim a13: class G (FN)", subtitle = "SHAP analysis for class G") 
+p2 <- contribution_plot_w_feature(shap_values_GM,new_dataset_scaled_filtered,num_row = 1) + labs(title="Anim a13: class G (FN)",subtitle = "SHAP analysis for class GM") 
 
-p3 <- contribution_plot(shap_values_G,num_row = 5) + labs(title="Anim a13: class G (TP)", subtitle = "SHAP analysis for class G") 
-p4 <- contribution_plot(shap_values_GM,num_row = 5) + labs(title="Anim a13: class G (TP)",subtitle = "SHAP analysis for class GM") 
+p3 <- contribution_plot_w_feature(shap_values_G,new_dataset_scaled_filtered,num_row = 5) + labs(title="Anim a13: class G (TP)", subtitle = "SHAP analysis for class G") 
+p4 <- contribution_plot_w_feature(shap_values_GM,new_dataset_scaled_filtered,num_row = 5) + labs(title="Anim a13: class G (TP)",subtitle = "SHAP analysis for class GM") 
 
 grid.arrange(p3, p4, p1, p2, nrow = 2 )
 list("G"=shap_values_G[5,1:15] %>% sum(),
@@ -389,20 +400,24 @@ list("G"=shap_values_G[5,1:15] %>% sum(),
 ```
 
 ###### class GM
-```{r fig.height=4, fig.width=8}
+```{r fig.height=8, fig.width=12}
 anim_id <- 'a13'
 activity <- 'GM'
+new_dataset_scaled <- new_dataset %>% mutate_if(is.numeric,range01)
+new_dataset_scaled_filtered<-new_dataset_scaled[which(new_dataset_scaled$Anim == anim_id & new_dataset_scaled$Activity == activity),]
+
 new_dataset_filtered<-new_dataset[ which(new_dataset$Anim == anim_id & new_dataset$Activity == activity),]
 new_dataset_filtered
 
 
 shap_values_G <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_G,"G")
 shap_values_GM <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_GM,"GM")
-p1 <- contribution_plot(shap_values_GM,num_row = 8) + labs(title="Anim a13: class GM (FN)", subtitle = "SHAP analysis for class GM") 
-p2 <- contribution_plot(shap_values_G,num_row = 8) + labs(title="Anim a13: class GM, (FN)",subtitle = "SHAP analysis for class G") 
+p1 <- contribution_plot_w_feature(shap_values_GM,new_dataset_scaled_filtered,num_row = 8) + labs(title="Anim a13: class GM (FN)", subtitle = "SHAP analysis for class GM") 
+p1
+p2 <- contribution_plot_w_feature(shap_values_G,new_dataset_scaled_filtered,num_row = 8) + labs(title="Anim a13: class GM, (FN)",subtitle = "SHAP analysis for class G") 
 
-p3 <- contribution_plot(shap_values_GM,num_row = 2) + labs(title="Anim a13: class GM (TP)", subtitle = "SHAP analysis for class GM") 
-p4 <- contribution_plot(shap_values_G,num_row = 2) + labs(title="Anim a13: class GM (TP)",subtitle = "SHAP analysis for class G") 
+p3 <- contribution_plot_w_feature(shap_values_GM,new_dataset_scaled_filtered,num_row = 2) + labs(title="Anim a13: class GM (TP)", subtitle = "SHAP analysis for class GM") 
+p4 <- contribution_plot_w_feature(shap_values_G,new_dataset_scaled_filtered,num_row = 2) + labs(title="Anim a13: class GM (TP)",subtitle = "SHAP analysis for class G") 
 
 grid.arrange(p3, 
              p4, 
@@ -425,20 +440,22 @@ shap_values[which(shap_values$Anim == 'a5' &
 
 
 ###### class G
-```{r fig.height=4, fig.width=8}
+```{r fig.height=8, fig.width=12}
 anim_id <- 'a5'
 activity <- 'G'
+new_dataset_scaled <- new_dataset %>% mutate_if(is.numeric,range01)
+new_dataset_scaled_filtered<-new_dataset_scaled[which(new_dataset_scaled$Anim == anim_id & new_dataset_scaled$Activity == activity),]
+
 new_dataset_filtered<-new_dataset[ which(new_dataset$Anim == anim_id & new_dataset$Activity == activity),]
 new_dataset_filtered
 
-
 shap_values_G <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_G,"G")
 shap_values_GM <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_GM,"GM")
-p1 <- contribution_plot(shap_values_G,num_row = 3) + labs(title="Anim a5: class G (FN)", subtitle = "SHAP analysis for class G") 
-p2 <- contribution_plot(shap_values_GM,num_row = 3) + labs(title="Anim a5: class G (FN)",subtitle = "SHAP analysis for class GM") 
+p1 <- contribution_plot_w_feature(shap_values_G,new_dataset_scaled_filtered,num_row = 3) + labs(title="Anim a5: class G (FN)", subtitle = "SHAP analysis for class G") 
+p2 <- contribution_plot_w_feature(shap_values_GM,new_dataset_scaled_filtered,num_row = 3) + labs(title="Anim a5: class G (FN)",subtitle = "SHAP analysis for class GM") 
 
-p3 <- contribution_plot(shap_values_G,num_row = 1) + labs(title="Anim a5: class G (TP)", subtitle = "SHAP analysis for class G") 
-p4 <- contribution_plot(shap_values_GM,num_row = 1) + labs(title="Anim a5: class G (TP)",subtitle = "SHAP analysis for class GM") 
+p3 <- contribution_plot_w_feature(shap_values_G,new_dataset_scaled_filtered,num_row = 1) + labs(title="Anim a5: class G (TP)", subtitle = "SHAP analysis for class G") 
+p4 <- contribution_plot_w_feature(shap_values_GM,new_dataset_scaled_filtered,num_row = 1) + labs(title="Anim a5: class G (TP)",subtitle = "SHAP analysis for class GM") 
 
 
 
@@ -448,20 +465,23 @@ list("G"=shap_values_G[1,1:15] %>% sum(),
 "GM"=shap_values_GM[1,1:15] %>% sum()) %>% as.data.frame()
 ```
 ###### class GM
-```{r fig.height=4, fig.width=8}
+```{r fig.height=8, fig.width=12}
 anim_id <- 'a5'
 activity <- 'GM'
+new_dataset_scaled <- new_dataset %>% mutate_if(is.numeric,range01)
+new_dataset_scaled_filtered<-new_dataset_scaled[which(new_dataset_scaled$Anim == anim_id & new_dataset_scaled$Activity == activity),]
+
 new_dataset_filtered<-new_dataset[ which(new_dataset$Anim == anim_id & new_dataset$Activity == activity),]
 new_dataset_filtered
 
 
 shap_values_G <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_G,"G")
 shap_values_GM <- calculate_shap_class(new_dataset, new_data = new_dataset_filtered, goat_model, nsim = 100, p_function_GM,"GM")
-p1 <- contribution_plot(shap_values_GM,num_row = 4) + labs(title="Anim a5: class GM (FN)", subtitle = "SHAP analysis for class GM") 
-p2 <- contribution_plot(shap_values_G,num_row = 4) + labs(title="Anim a5: class GM (FN)",subtitle = "SHAP analysis for class G") 
+p1 <- contribution_plot_w_feature(shap_values_GM,new_dataset_scaled_filtered,num_row = 4) + labs(title="Anim a5: class GM (FN)", subtitle = "SHAP analysis for class GM") 
+p2 <- contribution_plot_w_feature(shap_values_G,new_dataset_scaled_filtered,num_row = 4) + labs(title="Anim a5: class GM (FN)",subtitle = "SHAP analysis for class G") 
 
-p3 <- contribution_plot(shap_values_GM,num_row = 3) + labs(title="Anim a5: class GM (TP)", subtitle = "SHAP analysis for class GM") 
-p4 <- contribution_plot(shap_values_G,num_row = 3) + labs(title="Anim a5: class GM (TP)",subtitle = "SHAP analysis for class G") 
+p3 <- contribution_plot_w_feature(shap_values_GM,new_dataset_scaled_filtered,num_row = 3) + labs(title="Anim a5: class GM (TP)", subtitle = "SHAP analysis for class GM") 
+p4 <- contribution_plot_w_feature(shap_values_G,new_dataset_scaled_filtered,num_row = 3) + labs(title="Anim a5: class GM (TP)",subtitle = "SHAP analysis for class G") 
 
 grid.arrange(p3, p4, p1, p2, nrow = 2 )
 list("G"=shap_values_G[4,1:15] %>% sum(),

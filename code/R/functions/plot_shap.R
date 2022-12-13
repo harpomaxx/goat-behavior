@@ -186,7 +186,7 @@ dependency_plot_anim<- function(feature,dataset,shap,anim){
     names(data)<-c("shap","feature","tp")
     
     p <- ggplot(data, aes(x = feature)) +
-      geom_point(aes(y = shap, color = tp), alpha = 0.3, size = 0.8) +
+      geom_point(aes(y = shap, color = tp), alpha = 0.3, size = 1.8) +
       geom_smooth(aes(y = shap),
                   se = FALSE,
                   size = 0.5,
@@ -251,6 +251,24 @@ contribution_plot <-function(s, num_row = 1){
     coord_flip() +
     xlab("") +
     ylab("Shapley value")+
+    theme_classic()+
+    theme(legend.position = 'none')
+}
+
+
+contribution_plot_w_feature <-function(s, f, num_row = 1){
+  d <- data.frame(
+    variable = names(s[num_row,1:15]),
+    importance = apply(s[num_row,1:15], MARGIN = 2, FUN = function(x) sum(x)),
+    value = apply(f[num_row,1:15], MARGIN = 2, FUN = function(x) sum(x))
+  )
+  ggplot(d, aes(variable, importance, value,fill=value) )+
+    geom_col() +
+    geom_text(aes(label=round(value,digits = 2),hjust = 1.0),size=2)+
+    coord_flip() +
+    xlab("") +
+    ylab("Shapley value")+
+    scale_fill_gradient(low = 'lightgray', high = 'skyblue')+
     theme_classic()+
     theme(legend.position = 'none')
 }
