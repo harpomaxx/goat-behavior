@@ -241,7 +241,8 @@ dataset_wide <- dataset_wide %>% rowwise %>%
   as.data.frame() 
 ztbl<-ztable(dataset_wide)#
 
-ztbl %>% makeHeatmap(cols = 18) %>% print(caption="Table 1: Number of observations per animal discriminated by activity.")
+ztbl
+#ztbl %>% makeHeatmap(cols = 18) %>% print(caption="Table 1: Number of observations per animal discriminated by activity.")
 ```
 
 # Generate DATASET A table
@@ -273,7 +274,7 @@ dataset_wide <-
 dataset_wide <- dataset_wide %>% rowwise %>%
   mutate(Total = sum(across(2:8)))  %>% ungroup %>%
   as.data.frame() 
-ztable(dataset_wide) %>% makeHeatmap(cols = 9) %>%  print(caption="Table 2: Number of observations per animal discriminated by activity for Dataset A.")
+ztable(dataset_wide) #%>% makeHeatmap(cols = 9) %>%  print(caption="Table 2: Number of observations per animal discriminated by activity for Dataset A.")
 
 ```
 
@@ -310,7 +311,7 @@ dataset_wide <- dataset_wide %>% rowwise %>%
   mutate(Total = sum(across(2:10)))  %>% ungroup %>%
   as.data.frame() 
 
-ztable(dataset_wide) %>% makeHeatmap(cols = 11) %>% print(caption="Table 3: Number of observations per animal discriminated by activity for Dataset B.")
+ztable(dataset_wide) %>% makeHeatmap(cols = 11) #%>% print(caption="Table 3: Number of observations per animal discriminated by activity for Dataset B.")
 dataset %>% group_by(Anim) %>% count()
 ```
 
@@ -442,6 +443,8 @@ prec <- r2 |> ggplot(aes(x=id))+
   theme_linedraw()
 #prec
 gridExtra::grid.arrange(sens,bacc,spec,prec)
+g <- gridExtra::arrangeGrob(sens,bacc,spec,prec)
+ggsave(file="../../../images/samp-param-selection.pdf", plot = g, width = 30, height = 15, units = "cm")
 ```
 
 ```{r}

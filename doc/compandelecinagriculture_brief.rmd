@@ -76,7 +76,7 @@ A description of evaluation metrics used: Accuracy, Sensitivity and Specificity,
 
 ### 3.1 Feature selection results.
 
-Show a couple of tables withe the features selected by BORUTA
+Show a couple of tables with the features selected by BORUTA
 
 3.2 Model performance results
 
