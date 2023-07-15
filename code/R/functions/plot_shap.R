@@ -1,7 +1,7 @@
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(ggExtra))
-
+suppressPackageStartupMessages(library(forcats))
 
 
 
@@ -21,10 +21,34 @@ shap_summary_plot<-function(shap_values){
       group = class,
       fill = class
     ), position = "stack") +
-    xlab("Mean(|Shap Value|) Average impact on model output magnitude")
+    ylab("Feature")+
+    xlab("Mean(|Shap Value|) Average impact on model output magnitude per activity.")+
+    guides(fill=guide_legend(title="Activity"))
   summary_plot
   
 }
+
+
+shap_summary_plot_perclass<-function(shap_values, class="G",color="#F8766D"){
+  shap_values <-shap_values %>% as.data.frame() %>% filter(class == {{class}} )
+  summary_plot <-
+    shap_values %>% reshape2::melt() %>% group_by(variable) %>% 
+    summarise(mean = mean(abs(value))) %>% 
+    ggplot() +
+    theme_classic()+
+    geom_col(aes(
+      x = mean,
+      y = fct_reorder(variable,mean)
+    ),
+    fill = color
+    ) +
+    ylab("Feature")+
+    xlab(paste0("Mean(|Shap Value|) Average impact on model output magnitude for activity ", class))+
+    guides(fill=guide_legend(title="Activity"))
+  summary_plot
+  
+}
+
 
 shap_beeswarm_plot<-function(shap_values,dataset){
   
@@ -131,6 +155,7 @@ dependency_plot <- function(feature, dataset, shap) {
       ) #,margins='x')
     plots[[activity]] <- p1
   }
+  #plots
   do.call(grid.arrange, c(plots, ncol = 4))
 }
 
