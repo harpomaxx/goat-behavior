@@ -11,3 +11,7 @@ params-no-logs.py
 params-only-lags.py
 params-only-logs.py
 goat-behavior.Rproj
+/resample.csv
+/resample-1d.csv
+/history_dvc_commands
+/catboost_info
