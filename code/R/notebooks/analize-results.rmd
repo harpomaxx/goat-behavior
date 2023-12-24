@@ -330,8 +330,8 @@ plot<-grid.arrange(li[[5]])
 
 ```{r fig.height=4, fig.width=12}
 plot<-grid.arrange(li[[11]][1,c(1,4)])
-
-#ggsave(plot = plot,"images/shap-values-depency_plot_dba123.png",width = 10, height = 2.5, units = "in")
+plot<-grid.arrange(li[[11]])
+ggsave(plot = plot,"images/shap-values-depency_plot_dba123.png",width = 10, height = 2.5, units = "in")
 ```
 ```{r fig.height=4, fig.width=10}
 plot<-grid.arrange(li[[12]][1,c(1,4)])
