@@ -1,0 +1,5 @@
+outs:
+- md5: 6d67ae294595f5bb14972e28c848ebf9
+  size: 8544
+  hash: md5
+  path: history_dvc_commands
